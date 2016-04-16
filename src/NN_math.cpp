@@ -1,9 +1,9 @@
 #include "NN_math.h"
 #include <string.h>
+#include <iomanip>
 
 namespace NN
 {
-
 //
 // Matrix
 //
@@ -17,10 +17,35 @@ Matrix::Matrix(int size_x, int size_y)
     m_buff = 0;
   }
 }
+Matrix::Matrix(const Matrix& mat)
+{
+  m_row_size = mat.m_row_size;
+  m_col_size = mat.m_col_size;
+  if (m_row_size * m_col_size != 0) {
+    const size_t sz = m_row_size * m_col_size;
+    m_buff = new float[sz];
+    memcpy(m_buff, mat.m_buff, sizeof(float) * sz);
+  } else {
+    m_buff = 0;
+  }
+}
+
 Matrix::~Matrix()
 {
   delete[] m_buff;
   m_buff = 0;
+}
+
+Matrix Matrix::t() const
+{
+  Matrix mat(m_col_size, m_row_size);
+
+  for (int i = 0; i < m_row_size; ++i) {
+    for (int j = 0; j < m_col_size; ++j) {
+      mat(j, i) = (*this)(i, j);
+    }
+  }
+  return mat;
 }
 
 void Mul(const Matrix& m1, const Matrix& m2, Matrix& out)
@@ -51,8 +76,12 @@ void Mul(const Matrix& m1, const Matrix& m2, Matrix& out)
   }
 }
 
+#if 0
 void Mul(const Vector& vec, const Matrix& mat, Vector& out)
 {
+  _ASSERT(vec.size() == mat.col());
+//  _ASSERT(out.size() == out.m_row_size);
+
   float* ptr = mat.m_buff;
   for (int j = 0; j < mat.m_col_size; ++j) {
     out.m_buff[j] = 0;
@@ -61,16 +90,23 @@ void Mul(const Vector& vec, const Matrix& mat, Vector& out)
     }
   }
 }
+#endif
 
 std::ostream& operator <<(std::ostream& ost, const Matrix& mat)
 {
   float* ptr = mat.m_buff;
   for (int j = 0; j < mat.m_col_size; ++j) {
     for (int i = 0; i < mat.m_row_size; ++i) {
-      ost << *ptr++ << " ";
+      ost
+        << std::setw(7)
+        << std::right
+        << std::fixed
+        << std::setprecision(4)
+        << *ptr++ << " ";
     }
     ost << std::endl;
   }
+
   return ost;
 }
 

@@ -2,6 +2,8 @@
 
 #include <ostream>
 
+#define ARRAY_NUM(_x) (sizeof(_x)/(sizeof(_x[0])))
+
 namespace NN
 {
 
@@ -26,10 +28,11 @@ public:
     return m_buff[y*row() + x];
   }
 
-  friend std::ostream& operator <<(std::ostream& ost, const Matrix& mat);
+  Matrix t() const;
 
+  friend std::ostream& operator <<(std::ostream& ost, const Matrix& mat);
   friend void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
-  friend void Mul(const Vector& vec, const Matrix& mat, Vector& out);
+//  friend void Mul(const Vector& vec, const Matrix& mat, Vector& out);
 
 private:
   float* m_buff;
@@ -37,7 +40,7 @@ private:
   int m_col_size;
 };
 
-class Vector: protected Matrix
+class Vector: public Matrix
 {
 public:
   Vector(int size):
@@ -56,10 +59,11 @@ public:
     return Matrix::operator()(x, 0);
   }
 
-  friend void Mul(const Vector& vec, const Matrix& mat, Vector& out);
+  friend void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
+//  friend void Mul(const Vector& vec, const Matrix& mat, Vector& out);
 };
 
 void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
-void Mul(const Vector& vec, const Matrix& mat, Vector& out);
+//void Mul(const Vector& vec, const Matrix& mat, Vector& out);
 
 }
