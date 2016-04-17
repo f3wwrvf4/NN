@@ -4,10 +4,23 @@
 #include "stdafx.h"
 #include "NN_math.h"
 #include <iostream>
+#include <ostream>
+#include <fstream>
 #include <vector>
 
 namespace NN
 {
+struct TrainData
+{
+  TrainData(std::vector<float> inp, std::vector<float> out)
+  {
+    input = inp;
+    output = out;
+  }
+  std::vector<float> input;
+  std::vector<float> output;
+};
+
 class Network
 {
   const int W_NUM;
@@ -23,7 +36,7 @@ class Network
   Vector** deltas;
 
 public:
-  Network(int*L, int l_num):
+  Network(int*L, int l_num) :
     L_NUM(l_num),
     W_NUM(l_num - 1),
     I_NUM(l_num),
@@ -66,18 +79,6 @@ public:
       deltas[i] = new Vector(inputs[i + 1]->size());
     }
   }
-
-    struct TrainData
-    {
-      TrainData(std::vector<float> inp, std::vector<float> out)
-      {
-        input = inp;
-        output = out;
-      }
-      std::vector<float> input;
-      std::vector<float> output;
-    };
-
   void train(TrainData* td_tbl, int num)
   {
     const int DATA_COUNT = num;
@@ -94,20 +95,8 @@ public:
           }
         }
 
-        // ‡“`”d
-        for (int iL = 0; iL < L_NUM - 1; ++iL) {
-          Vector& y = (*inputs[iL]);
-          Matrix& w = (*weights[iL]);
-          Vector& o = (*inputs[iL + 1]);
-          if (iL < L_LAST) {
-            const int last = y.size() - 1;
-            y(last) = 1.0f;  // weight‚ğ“ü—Í‚Æ‚µ‚Ä•]‰¿‚·‚é
-          }
-          NN::Mul(y, w, o);
-          for (int i = 0; i < o.size(); ++i) {
-            o(i) = sigmoid(o(i));
-          }
-        }
+        // forwad
+        feedForward();
 
         // Œë·‚Ì•]‰¿
         {
@@ -117,45 +106,9 @@ public:
           }
         }
 
-        // ‹t“`”d
+        // back
         {
-          // o—Í‘w
-          {
-            const Vector& out = *inputs[L_LAST];
-            Vector& delta = *deltas[D_LAST];
-            for (int i = 0; i < out.size(); ++i) {
-              delta(i) = (out(i) - data.output[i]) * (1.0f - out(i)) * out(i);
-            }
-          }
-
-          // ‰B‚ê‘w
-          for (int i = W_NUM-1; 0<i; --i){
-            const int layer = i;
-            const Vector& hidden = *inputs[layer];
-            const Matrix& weight = *weights[layer];
-            const Vector& prev_delta = *deltas[layer];
-            Vector& hid_back = *deltas[layer - 1];
-            Mul(weight, prev_delta, hid_back);
-            for (int i = 0; i < hid_back.size(); ++i) {
-              hid_back(i) = hid_back(i) * (1.0f - hidden(i)) * hidden(i);
-            }
-          }
-
-          // d‚İ‚ğC³
-          const float eps = 0.1f;
-          for (int i = 0; i < W_NUM; ++i) {
-            Matrix& weigh = *weights[i];
-            const Vector& back = *deltas[i];
-            const Vector& inp = *inputs[i];
-
-            for (int iRow = 0; iRow < weigh.row(); ++iRow) {
-              for (int iCol = 0; iCol < weigh.col(); ++iCol) {
-                float b = back(iRow);
-                float in = inp(iCol);
-                weigh(iRow, iCol) -= eps*in*b;
-              }
-            }
-          }
+          backPropagate(data);
         }
       }
       if (error < 0.01f) {
@@ -163,6 +116,77 @@ public:
         break;
       }
     }
+  }
+
+  void feedForward()
+  {
+    // ‡“`”d
+    for (int iL = 0; iL < L_NUM - 1; ++iL) {
+      Vector& y = (*inputs[iL]);
+      Matrix& w = (*weights[iL]);
+      Vector& o = (*inputs[iL + 1]);
+      if (iL < L_LAST) {
+        const int last = y.size() - 1;
+        y(last) = 1.0f;  // weight‚ğ“ü—Í‚Æ‚µ‚Ä•]‰¿‚·‚é
+      }
+      NN::Mul(y, w, o);
+      for (int i = 0; i < o.size(); ++i) {
+        o(i) = sigmoid(o(i));
+      }
+    }
+  }
+
+  void backPropagate(const TrainData& data)
+  {
+    // o—Í‘w
+    {
+      const Vector& out = *inputs[L_LAST];
+      Vector& delta = *deltas[D_LAST];
+      for (int i = 0; i < out.size(); ++i) {
+        delta(i) = (out(i) - data.output[i]) * (1.0f - out(i)) * out(i);
+      }
+    }
+
+    // ‰B‚ê‘w
+    for (int i = W_NUM - 1; 0 < i; --i) {
+      const int layer = i;
+      const Vector& hidden = *inputs[layer];
+      const Matrix& weight = *weights[layer];
+      const Vector& prev_delta = *deltas[layer];
+      Vector& hid_back = *deltas[layer - 1];
+      Mul(weight, prev_delta.t(), hid_back);
+      for (int i = 0; i < hid_back.size(); ++i) {
+        hid_back(i) = hid_back(i) * (1.0f - hidden(i)) * hidden(i);
+      }
+    }
+
+    // d‚İ‚ğC³
+    const float eps = 0.1f;
+    for (int i = 0; i < W_NUM; ++i) {
+      Matrix& weigh = *weights[i];
+      const Vector& back = *deltas[i];
+      const Vector& inp = *inputs[i];
+
+      for (int iRow = 0; iRow < weigh.row(); ++iRow) {
+        for (int iCol = 0; iCol < weigh.col(); ++iCol) {
+          float b = back(iRow);
+          float in = inp(iCol);
+          weigh(iRow, iCol) -= eps*in*b;
+        }
+      }
+    }
+  }
+
+  std::vector<float> eval(std::vector<float> input)
+  {
+    Vector& y = *inputs[0];
+    for (int i = 0; i < y.size() - 1; ++i) {
+      y(i) = input[i];
+    }
+
+    feedForward();
+
+    return (*inputs[L_LAST]).vec();
   }
 
   ~Network(){
@@ -186,24 +210,53 @@ public:
   { 
     return 1.0f / (1.0f + exp(-v));
   }
+#if 0
+  void save(const char* fpath)
+  {
+    std::ofstream ofs(fpath);
+    ofs << 
+
+  const int W_NUM;
+  const int I_NUM;
+  const int L_LAST;
+  const int L_NUM;
+  const int D_NUM;
+  const int D_LAST;
+
+  Matrix** weights;
+  Vector** inputs;
+  Vector** backs;
+  Vector** deltas;
+  }
+#endif
+
 };
 
 }
 
 int main()
 {
-  int L[] = { 3, 5, 1 };
+  int L[] = { 2, 1 };
   NN::Network net(L, ARRAY_NUM(L));
 
-  NN::Network::TrainData
+  NN::TrainData
     td_tbl[] =
   {
-     NN::Network::TrainData({0, 0, 0}, {1}),
-     NN::Network::TrainData({1, 0, 0}, {1}),
-     NN::Network::TrainData({0, 1, 1}, {1}),
-     NN::Network::TrainData({1, 1, 1}, {0}),
+     NN::TrainData({0, 0}, {1}),
+     NN::TrainData({1, 0}, {1}),
+     NN::TrainData({0, 1}, {1}),
+     NN::TrainData({1, 1}, {0}),
   };
   net.train(td_tbl, ARRAY_NUM(td_tbl));
+
+//  net.save("nand.nn");
+
+  std::vector<float> val;
+  val = net.eval({ 0, 0});
+  val = net.eval({ 1, 0});
+  val = net.eval({ 0, 1});
+  val = net.eval({ 1, 1});
+
   getchar();
   return 0;
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ostream>
+#include <vector>
 
 #define ARRAY_NUM(_x) (sizeof(_x)/(sizeof(_x[0])))
 
@@ -34,7 +35,7 @@ public:
   friend void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
 //  friend void Mul(const Vector& vec, const Matrix& mat, Vector& out);
 
-private:
+protected:
   float* m_buff;
   int m_row_size;
   int m_col_size;
@@ -61,6 +62,11 @@ public:
 
   friend void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
 //  friend void Mul(const Vector& vec, const Matrix& mat, Vector& out);
+
+  std::vector<float> vec() const
+  {
+    return std::vector<float>(m_buff, m_buff + size());
+  }
 };
 
 void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
