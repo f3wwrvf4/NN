@@ -7,6 +7,13 @@ namespace NN
 //
 // Matrix
 //
+Matrix::Matrix()
+{
+  m_row_size = 0;
+  m_col_size = 0;
+  m_buff = 0;
+}
+
 Matrix::Matrix(int size_x, int size_y)
 {
   m_row_size = size_x;
@@ -94,6 +101,7 @@ void Mul(const Vector& vec, const Matrix& mat, Vector& out)
 
 std::ostream& operator <<(std::ostream& ost, const Matrix& mat)
 {
+  ost << mat.m_row_size << " " << mat.m_col_size << std::endl;
   float* ptr = mat.m_buff;
   for (int j = 0; j < mat.m_col_size; ++j) {
     for (int i = 0; i < mat.m_row_size; ++i) {
@@ -108,6 +116,27 @@ std::ostream& operator <<(std::ostream& ost, const Matrix& mat)
   }
 
   return ost;
+}
+
+std::istream& operator >>(std::istream& ist, Matrix& mat)
+{
+  int row, col;
+
+  mat.clear();
+
+  ist >> row >> col;
+  mat.m_row_size = row;
+  mat.m_col_size = col;
+
+  mat.m_buff = new float[row*col];
+  float* ptr = mat.m_buff;
+  for (int i = 0; i < row*col; ++i) {
+    float f;
+    ist >> f;
+
+    *ptr++ = f;
+  }
+  return ist;
 }
 
 }

@@ -5,8 +5,10 @@
 #include "NN_math.h"
 #include <iostream>
 #include <ostream>
+#include <istream>
 #include <fstream>
 #include <vector>
+#include <assert.h>
 
 namespace NN
 {
@@ -183,13 +185,12 @@ public:
     for (int i = 0; i < y.size() - 1; ++i) {
       y(i) = input[i];
     }
-
     feedForward();
-
     return (*inputs[L_LAST]).vec();
   }
 
-  ~Network(){
+  ~Network()
+  {
     for (int i = 0; i < I_NUM; ++i) {
       delete inputs[i];
     }
@@ -207,57 +208,94 @@ public:
   }
 
   float sigmoid(float v)
-  { 
+  {
     return 1.0f / (1.0f + exp(-v));
   }
-#if 0
+
   void save(const char* fpath)
   {
     std::ofstream ofs(fpath);
-    ofs << 
 
-  const int W_NUM;
-  const int I_NUM;
-  const int L_LAST;
-  const int L_NUM;
-  const int D_NUM;
-  const int D_LAST;
+    // input
+    ofs << I_NUM << std::endl;
+    for (int i = 0; i < I_NUM; ++i) {
+      int sz = inputs[i]->size();
+      if (i != (I_NUM - 1)) {
+        sz -= 1;
+      }
+      ofs << sz << " ";
+    }
+    ofs << std::endl;
 
-  Matrix** weights;
-  Vector** inputs;
-  Vector** backs;
-  Vector** deltas;
+    // weight
+    ofs << W_NUM << std::endl;
+    for (int i = 0; i < W_NUM; ++i) {
+      ofs << (*weights[i]);
+    }
+    ofs << std::endl;
   }
-#endif
 
-};
+  static Network* CreateFromFile(const char* fpath)
+  {
+    std::ifstream ifs(fpath);
+    int i_num;
+    ifs >> i_num;
+    int* ary = new int[i_num];
+    for (int i = 0; i < i_num; ++i) {
+      ifs >> ary[i];
+    }
+    Network* net = new Network(ary, i_num);
+    delete[] ary;
 
-}
+    int w_num;
+    ifs >> w_num;
+    for (int i = 0; i < w_num; ++i) {
+      ifs >> *net->weights[i];
+    }
+    return net;
+  }
+}; // Network
+} // NN
 
 int main()
 {
-  int L[] = { 2, 1 };
-  NN::Network net(L, ARRAY_NUM(L));
-
-  NN::TrainData
-    td_tbl[] =
+#if 0
   {
-     NN::TrainData({0, 0}, {1}),
-     NN::TrainData({1, 0}, {1}),
-     NN::TrainData({0, 1}, {1}),
-     NN::TrainData({1, 1}, {0}),
-  };
-  net.train(td_tbl, ARRAY_NUM(td_tbl));
+    int L[] = { 2, 1 };
+    NN::Network net(L, ARRAY_NUM(L));
 
-//  net.save("nand.nn");
+    NN::TrainData
+      td_tbl[] =
+    {
+       NN::TrainData({0, 0}, {1}),
+       NN::TrainData({1, 0}, {1}),
+       NN::TrainData({0, 1}, {1}),
+       NN::TrainData({1, 1}, {0}),
+    };
+    net.train(td_tbl, ARRAY_NUM(td_tbl));
 
-  std::vector<float> val;
-  val = net.eval({ 0, 0});
-  val = net.eval({ 1, 0});
-  val = net.eval({ 0, 1});
-  val = net.eval({ 1, 1});
+    net.save("nand.nn");
+  }
+#else
+  {
+    NN::Network* net = NN::Network::CreateFromFile("nand.nn");
 
-  getchar();
-  return 0;
+    std::vector<float> val;
+    val = net->eval({ 0, 0 });
+    assert(roundf(val[0]) == 1.0f);
+    val = net->eval({ 1, 0 });
+    assert(roundf(val[0]) == 1.0f);
+    val = net->eval({ 0, 1 });
+    assert(roundf(val[0]) == 1.0f);
+    val = net->eval({ 1, 1 });
+    assert(roundf(val[0]) == 0.0f);
+
+    delete net;
+    net = 0;
+  }
+#endif
+
+getchar();
+return 0;
 }
 
