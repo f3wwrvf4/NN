@@ -8,13 +8,19 @@ namespace NN
 
 struct TrainData
 {
-  TrainData(std::vector<float> inp, std::vector<float> out)
+  TrainData():
+    input({}),
+    output({})
+  {}
+
+  TrainData(const std::vector<float>& inp, const std::vector<float>& out):
+    input(inp),
+    output(out)
   {
-    input = inp;
-    output = out;
   }
-  std::vector<float> input;
-  std::vector<float> output;
+
+  const std::vector<float>& input;
+  const std::vector<float>& output;
 };
 
 class Network
@@ -35,7 +41,7 @@ public:
   Network(int*L, int l_num);
   ~Network();
 
-  void train(TrainData* td_tbl, int num);
+  void train(const TrainData* td_tbl, int num);
   std::vector<float> eval(std::vector<float> input);
 
   void save(const char* fpath);

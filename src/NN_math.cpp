@@ -1,6 +1,8 @@
 #include "NN_math.h"
 #include <string.h>
+#include <iostream>
 #include <iomanip>
+#include <vector>
 
 namespace NN
 {
@@ -43,6 +45,13 @@ Matrix::~Matrix()
   m_buff = 0;
 }
 
+void Matrix::clear()
+{
+  m_row_size = m_col_size = 0;
+  delete[] m_buff;
+  m_buff = 0;
+}
+
 Matrix Matrix::t() const
 {
   Matrix mat(m_col_size, m_row_size);
@@ -53,6 +62,16 @@ Matrix Matrix::t() const
     }
   }
   return mat;
+}
+
+std::vector<float> Vector::vec() const
+{
+  size_t sz = size();
+  std::vector<float> v(sz);
+  for (int i = 0; i < sz; ++i) {
+    v[i] = m_buff[i];
+  }
+  return v;
 }
 
 void Mul(const Matrix& m1, const Matrix& m2, Matrix& out)

@@ -41,7 +41,7 @@ Network::Network(int* L, int l_num) :
     float v = 1.0f;
     for (int r = 0; r < szcol; ++r) {
       for (int c = 0; c < szrow; ++c) {
-        (*weights[i])(c, r) = (v *= -1.0f);
+        (*weights[i])(c, r) = (rand() / (float)RAND_MAX) - 0.5;
       }
     }
   }
@@ -68,10 +68,10 @@ Network::~Network()
   delete[] deltas;
 }
 
-void Network::train(TrainData* td_tbl, int num)
+void Network::train(const TrainData* td_tbl, int num)
 {
   const int DATA_COUNT = num;
-  const int TRAIN_COUNT = 100000;
+  const int TRAIN_COUNT = 10000000;
 
   for (int iTrainCount = 0; iTrainCount < TRAIN_COUNT; ++iTrainCount) {
     float error = 0;
@@ -100,6 +100,12 @@ void Network::train(TrainData* td_tbl, int num)
         backPropagate(data);
       }
     }
+
+    if ((iTrainCount % 100) == 0) {
+      std::cout << "Train Count:" << iTrainCount
+        << "  error:" << error << std::endl;
+    }
+
     if (error < 0.01f) {
       std::cout << "err:" << error << std::endl;
       break;
