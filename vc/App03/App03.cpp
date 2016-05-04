@@ -64,16 +64,14 @@ int main()
   NN::Matrix weigh_h(Node1, Node2);
   NN::Matrix weigh_o(Node2, Node3);
 
-  NN::Matrix err_o(bn, Node3);
-  NN::Matrix err_h(bn, Node2);
-
   NN::Matrix delta_o(bn, Node3);
   NN::Matrix delta_h(bn, Node2);
+
+  NN::Matrix differ_h(bn, Node2);
 
   NN::Matrix rdw_h(Node1, Node2);
   NN::Matrix rdw_o(Node2, Node3);
 
-  NN::Matrix differ_h(bn, Node2);
 
   weigh_h.random();
   weigh_o.random();
@@ -148,7 +146,6 @@ int main()
     NN::Mul(-eps, rdw_o, rdw_o);
     NN::Add(weigh_h, rdw_h, weigh_h);
     NN::Add(weigh_o, rdw_o, weigh_o);
-
   }
 
   DWORD msec2 = GetTickCount();
