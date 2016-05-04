@@ -41,7 +41,7 @@ Network::Network(int* L, int l_num) :
     float v = 1.0f;
     for (int r = 0; r < szcol; ++r) {
       for (int c = 0; c < szrow; ++c) {
-        (*weights[i])(c, r) = (rand() / (float)RAND_MAX) - 0.5;
+        (*weights[i])(c, r) = (rand() / (float)RAND_MAX) - 0.5f;
       }
     }
   }

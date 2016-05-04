@@ -33,9 +33,19 @@ public:
 
   Matrix t() const;
 
+  void random()
+  {
+    size_t sz = m_row_size * m_col_size;
+    for (int i = 0; i < sz; ++i)
+      m_buff[i] = rand() / (float)RAND_MAX - 0.5f;
+  }
+
   friend std::ostream& operator <<(std::ostream& ost, const Matrix& mat);
   friend std::istream& operator >>(std::istream& ist, Matrix& mat);
   friend void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
+  friend void Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out);
+  friend const Matrix& Mul(float f, const Matrix& m2, Matrix& out);
+  friend void Add(const Matrix& m1, const Matrix& m2, Matrix& out);
 
 protected:
   float* m_buff;
@@ -65,8 +75,14 @@ public:
     return Matrix::operator()(x, 0);
   }
   friend void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
+  friend void Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out);
+  friend const Matrix& Mul(float f, const Matrix& m2, Matrix& out);
+  friend void Add(const Matrix& m1, const Matrix& m2, Matrix& out);
 };
 
 void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
+void Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out);
+const Matrix& Mul(float f, const Matrix& m2, Matrix& out);
+void Add(const Matrix& m1, const Matrix& m2, Matrix& out);
 
 }

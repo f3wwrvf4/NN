@@ -78,6 +78,9 @@ void Mul(const Matrix& m1, const Matrix& m2, Matrix& out)
 {
   _ASSERT(m1.m_row_size == m2.m_col_size);
 
+  _ASSERT(m1.m_col_size == out.m_col_size);
+  _ASSERT(m2.m_row_size == out.m_row_size);
+
   const int col1 = m1.m_col_size;
   const int row1 = m1.m_row_size;
 //  const int col2 = m2.m_col_size;
@@ -102,21 +105,53 @@ void Mul(const Matrix& m1, const Matrix& m2, Matrix& out)
   }
 }
 
-#if 0
-void Mul(const Vector& vec, const Matrix& mat, Vector& out)
+void Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out)
 {
-  _ASSERT(vec.size() == mat.col());
-//  _ASSERT(out.size() == out.m_row_size);
+  _ASSERT(m1.m_row_size == m2.m_row_size);
+  _ASSERT(m1.m_row_size == out.m_row_size);
+  _ASSERT(m1.m_col_size == m2.m_col_size);
+  _ASSERT(m1.m_col_size == out.m_col_size);
 
-  float* ptr = mat.m_buff;
-  for (int j = 0; j < mat.m_col_size; ++j) {
-    out.m_buff[j] = 0;
-    for (int i = 0; i < mat.m_row_size; ++i) {
-      out.m_buff[j] += *ptr++ * vec.m_buff[i];
-    }
+  const float* p1 = m1.m_buff;
+  const float* p2 = m2.m_buff;
+  float* po = out.m_buff;
+
+  const int sz = m1.col()*m2.row();
+  for (int i = 0; i < sz; ++i) {
+    *po++ = *p1++ * *p2++;
   }
 }
-#endif
+
+const Matrix& Mul(float f, const Matrix& m2, Matrix& out)
+{
+  _ASSERT(m2.m_row_size == out.m_row_size);
+  _ASSERT(m2.m_col_size == out.m_col_size);
+
+  const float* p2 = m2.m_buff;
+  float* po = out.m_buff;
+
+  const int sz = m2.col()*m2.row();
+  for (int i = 0; i < sz; ++i) {
+    *po++ = f * *p2++;
+  }
+  return out;
+}
+void Add(const Matrix& m1, const Matrix& m2, Matrix& out)
+{
+  _ASSERT(m1.m_row_size == m2.m_row_size);
+  _ASSERT(m1.m_row_size == out.m_row_size);
+  _ASSERT(m1.m_col_size == m2.m_col_size);
+  _ASSERT(m1.m_col_size == out.m_col_size);
+
+  const float* p1 = m1.m_buff;
+  const float* p2 = m2.m_buff;
+  float* po = out.m_buff;
+
+  const int sz = m1.col()*m2.row();
+  for (int i = 0; i < sz; ++i) {
+    *po++ = *p1++ + *p2++;
+  }
+}
 
 std::ostream& operator <<(std::ostream& ost, const Matrix& mat)
 {
