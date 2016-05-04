@@ -22,25 +22,19 @@ struct Matrix
   }
 };
 
-template<  
-  int T1 = 0, int T2 = 0, int T3 = 0, int T4 = 0, int T5 = 0
->
+template<int T1 = 0, int T2 = 0, int T3 = 0, int T4 = 0, int T5 = 0 >
 struct IntList
 {
-private:
   typedef IntList<T2, T3, T4, T5> Tail;
   enum 
   {
     Length = Tail::Length + 1
   };
-public:
 
   int length() { return Length; }
   int size() { return T1; }
 
-public:
   int val[T1];
-private:
   Tail tail;
 };
 
@@ -50,29 +44,39 @@ struct IntList<0>
   enum { Length = 0 };
 };
 
+const int BatchNum = 10;
 
-struct Network
+template< int T1 = 0, int T2 = 0, int T3 = 0, int T4 = 0, int T5 = 0 >
+struct Layer
 {
-  struct InitParam
-  {
+  typedef Layer<T2, T3, T4, T5> Tail;
+  Tail tail;
 
+  float node_value[T1 + Tail::IsMiddle];
+
+  Matrix<Size, Tail::Size> weight;
+  Matrix<BatchNum, 
+
+  enum
+  {
+    IsMiddle = 1,
+
+    Size = T1 + Tail::IsMiddle,
   };
-
-  Network()
-  {
-
-  }
-
-  T inputs[L1]
-
 };
 
+template<>
+struct Layer<0>
+{
+  enum
+  {
+    IsMiddle = 0,
+  };
+};
 
 int main()
 {
-  IntList<2, 3, 4> il;
-
-  il.val[0] = 1;
+  Layer<2, 3, 4> l;
 
   return 0;
 }
