@@ -20,6 +20,7 @@ Network::Network(int* L, int l_num) :
   inputs = new Vector*[I_NUM];
   backs = new Vector*[I_NUM];
   deltas = new Vector*[D_NUM];
+  deltas_t = new Matrix*[D_NUM];
 
   for (int i = 0; i < I_NUM; ++i) {
     int sz;
@@ -48,6 +49,7 @@ Network::Network(int* L, int l_num) :
 
   for (int i = 0; i < D_NUM; ++i) {
     deltas[i] = new Vector(inputs[i + 1]->size());
+    deltas_t[i] = new Matrix(1, inputs[i + 1]->size());
   }
 }
 Network::~Network()
@@ -149,8 +151,10 @@ void Network::backPropagate(const TrainData& data)
       const Vector& hidden = *inputs[layer];
       const Matrix& weight = *weights[layer];
       const Vector& prev_delta = *deltas[layer];
+      Matrix& prev_delta_t = *deltas_t[layer];
       Vector& hid_back = *deltas[layer - 1];
-      Mul(weight, prev_delta.t(), hid_back);
+      prev_delta.t(prev_delta_t);
+      Mul(weight, prev_delta_t, hid_back);
       for (int i = 0; i < hid_back.size(); ++i) {
         hid_back(i) = hid_back(i) * (1.0f - hidden(i)) * hidden(i);
       }

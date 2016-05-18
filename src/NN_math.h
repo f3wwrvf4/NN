@@ -9,9 +9,8 @@ namespace NN
 
 class Vector;
 
-class Matrix
+struct Matrix
 {
-public:
   Matrix();
   Matrix(int size_x, int size_y);
   Matrix(const Matrix& mat);
@@ -31,7 +30,7 @@ public:
     return m_buff[y*row() + x];
   }
 
-  Matrix t() const;
+  void t(Matrix&) const;
 
   void random()
   {
@@ -47,7 +46,6 @@ public:
   friend const Matrix& Mul(float f, const Matrix& m2, Matrix& out);
   friend void Add(const Matrix& m1, const Matrix& m2, Matrix& out);
 
-protected:
   float* m_buff;
   int m_row_size;
   int m_col_size;
@@ -85,4 +83,6 @@ void Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out);
 const Matrix& Mul(float f, const Matrix& m2, Matrix& out);
 void Add(const Matrix& m1, const Matrix& m2, Matrix& out);
 
+
+float Square(float val);
 }

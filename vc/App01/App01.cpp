@@ -18,7 +18,7 @@ int main()
 
 #if 1
 
-  if (1) {
+  if (0) {
     int sz = mnist.imageCol() * mnist.imageRow();
     int L[] = { sz , 1000, 10 };
     NN::Network net(L, ARRAY_NUM(L));
@@ -86,7 +86,7 @@ int main()
 
 
   if (1) {
-    int L[] = { 3, 40, 2 };
+    int L[] = { 3, 1000, 2 };
     NN::Network net(L, ARRAY_NUM(L));
 
     std::vector<float> in[] = {

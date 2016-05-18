@@ -52,16 +52,17 @@ void Matrix::clear()
   m_buff = 0;
 }
 
-Matrix Matrix::t() const
+ void Matrix::t(Matrix& mat) const
 {
-  Matrix mat(m_col_size, m_row_size);
+//  Matrix mat(m_col_size, m_row_size);
 
   for (int i = 0; i < m_row_size; ++i) {
     for (int j = 0; j < m_col_size; ++j) {
       mat(j, i) = (*this)(i, j);
     }
   }
-  return mat;
+//  return mat;
+
 }
 
 std::vector<float> Vector::vec() const
@@ -77,7 +78,6 @@ std::vector<float> Vector::vec() const
 void Mul(const Matrix& m1, const Matrix& m2, Matrix& out)
 {
   _ASSERT(m1.m_row_size == m2.m_col_size);
-
   _ASSERT(m1.m_col_size == out.m_col_size);
   _ASSERT(m2.m_row_size == out.m_row_size);
 
@@ -192,5 +192,11 @@ std::istream& operator >>(std::istream& ist, Matrix& mat)
   }
   return ist;
 }
+
+float Square(float val)
+{
+  return val*val; 
+}
+
 
 }
