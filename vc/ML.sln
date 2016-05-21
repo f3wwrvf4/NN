@@ -23,6 +23,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "App03", "App03\App03.vcxpro
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "App04", "App04\App04.vcxproj", "{DE815406-73B0-46EA-A97A-E1670C03A2A7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3F282F96-AFD8-4B75-8777-35AA02E503F0} = {3F282F96-AFD8-4B75-8777-35AA02E503F0}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -7,6 +7,118 @@
 namespace NN
 {
 
+Network::Network(int layer_num_, const int* node_num_, int batch_num_):
+  layer_num(layer_num_),
+  node_num(node_num_),
+  batch_num(batch_num_)
+{
+  const int layers_len = layer_num - 1;
+  const int last_layer = layer_num - 1;
+
+  layers = new Layer<Logistic>*[layers_len];
+
+  NN::Layer<Logistic>* prev = 0;
+  for (int i = 0; i < layers_len; ++i) {
+    const bool isLast = i == (layers_len - 1);
+    const int node1 = node_num[i] + 1;
+    const int node2 = isLast ? node_num[i + 1] : node_num[i + 1] + 1;
+    layers[i] = new NN::Layer<NN::Logistic>(batch_num, node1, node2);
+    layers[i]->prev = prev;
+    if (prev) prev->next = layers[i];
+    prev = layers[i];
+  }
+}
+
+void Network::train()
+{
+  const int layers_len = layer_num - 1;
+  const int last_layer = layer_num - 1;
+
+  struct
+  {
+    float ti[3];
+    float to[2];
+  }td[] = {
+    {{0, 0, 0}, {1, 1}},
+    {{0, 0, 1}, {1, 0}},
+    {{0, 1, 0}, {1, 1}},
+    {{0, 1, 1}, {1, 0}},
+    {{1, 0, 0}, {1, 1}},
+    {{1, 0, 1}, {1, 0}},
+    {{1, 1, 0}, {0, 1}},
+    {{1, 1, 1}, {0, 1}},
+  };
+
+
+  const int Node1 = node_num[0] + 1;
+  const int NodeL = node_num[last_layer];
+
+  NN::Matrix input(batch_num, Node1);
+  NN::Matrix delta_o(batch_num, NodeL);
+  NN::Layer<Logistic>* layer;
+
+  float error = 0;
+  int iTrain = 0;
+  while (true) {
+    ++iTrain;
+    error = 0;
+
+    for (int i = 0; i < batch_num; ++i) {
+      int tid = i;
+      for (int j = 0; j < Node1; ++j) {
+        input(i, j) = td[tid].ti[j];
+      }
+      input(i, Node1-1) = 1.0f;
+    }
+
+    layer = layers[0];
+    const NN::Matrix* in = &input;
+    for (int i = 0; i < layers_len; ++i){
+      in = layer->forward(in);
+      layer = layer->next;
+    }
+
+    // error
+    const Matrix& out = layers[layers_len-1]->out;
+    for (int i = 0; i < batch_num; ++i) {
+      for (int j = 0; j < NodeL; ++j) {
+        int tid = i;
+        const float err = NN::Square(td[tid].to[j] - out(i, j));
+        error += err;
+        delta_o(i, j) = out(i, j) - td[tid].to[j];
+      }
+    }
+
+    if ((iTrain % 100) == 0) {
+      std::cout << iTrain << ":" << error << std::endl;
+    }
+    if (error < 0.01f) {
+      for (int i = 0; i < batch_num; ++i) {
+        for (int j = 0; j < NodeL; ++j) {
+          int tid = i;
+          float t = td[tid].to[j];
+          float o = out(i, j);
+          std::cout << t << " - " << o << std::endl;
+        }
+      }
+      std::cout << iTrain << ":" << error << std::endl;
+      break;
+    }
+
+    // back
+    layer = layers[layers_len-1];
+    const Matrix* delta = &delta_o;
+    while (layer) {
+      delta = layer->back(delta);
+      layer = layer->prev;
+    }
+
+  }
+}
+
+
+
+#if 0
 Network::Network(int* L, int l_num) :
   L_NUM(l_num),
   W_NUM(l_num - 1),
@@ -230,5 +342,5 @@ Network* Network::CreateFromFile(const char* fpath)
   }
   return net;
 }
-
+#endif
 }

@@ -85,14 +85,14 @@ int main()
 
   float error;
   int iTrain = 0;
-  while(true) {
+  while (true) {
     ++iTrain;
 
     if ((iTrain & 1) == 1)
       error = 0;
 
     for (int i = 0; i < bn; ++i) {
-      int tid = i +(iTrain & 1 ? 0 : bn);
+      int tid = i + (iTrain & 1 ? 0 : bn);
       for (int j = 0; j < InputNum; ++j) {
         input(i, j) = td[tid].ti[j];
       }
@@ -100,14 +100,13 @@ int main()
     }
 
     // forward
-    NN::Weight::calcLogisticMid(weigh_h, input, hidden, differ_h);
-
-    NN::Weight::calcLogisticOut(weigh_o, hidden, out);
+    NN::Logistic::calcMid(weigh_h, input, hidden, differ_h);
+    NN::Logistic::calcOut(weigh_o, hidden, out);
 
     // error
     for (int i = 0; i < bn; ++i) {
       for (int j = 0; j < OutNum; ++j) {
-        int tid = i +(iTrain & 1 ? 0 : bn);
+        int tid = i + (iTrain & 1 ? 0 : bn);
         const float err = NN::Square(td[tid].to[j] - out(i, j));
         error += err;
         delta_o(i, j) = out(i, j) - td[tid].to[j];
@@ -128,7 +127,7 @@ int main()
     }
 
     // back
-
+#if 0
     // we already have delta_o 
     // delta_o => rdw_o
     hidden.t(hidden_t);
@@ -147,13 +146,34 @@ int main()
     const float eps = 0.1f;
     NN::Mul(-eps, rdw_h, rdw_h);
     NN::Add(weigh_h, rdw_h, weigh_h);
-   
+
     NN::Mul(-eps, rdw_o, rdw_o);
     NN::Add(weigh_o, rdw_o, weigh_o);
+#else
+    hidden.t(hidden_t);
+    NN::Mul(delta_o, hidden_t, rdw_o);
+
+    (weigh_o).t(weigh_o_t);
+    NN::Mul(weigh_o_t, delta_o, delta_h);
+    NN::Hadamard(differ_h, delta_h, delta_h);
+
+    const float eps = 0.1f;
+    NN::Mul(-eps, rdw_o, rdw_o);
+    NN::Add(weigh_o, rdw_o, weigh_o);
+
+    input.t(input_t);
+    NN::Mul(delta_h, input_t, rdw_h);
+    NN::Mul(-eps, rdw_h, rdw_h);
+    NN::Add(weigh_h, rdw_h, weigh_h);
+
+#endif
   }
 
   DWORD msec2 = GetTickCount();
   std::cout << "sec: " << msec2 - msec1;
+
+
+
 
   getchar();
   return 0;
