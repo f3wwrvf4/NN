@@ -18,17 +18,11 @@ struct Matrix
 
   void clear();
 
-  int row() const { return m_row_size; }
-  int col() const { return m_col_size; }
+  inline int row() const { return m_row_size; }
+  inline int col() const { return m_col_size; }
 
-  float& operator()(int x, int y)
-  {
-    return m_buff[y*row() + x];
-  }
-  float operator()(int x, int y) const
-  {
-    return m_buff[y*row() + x];
-  }
+  inline float& operator()(int x, int y);
+  inline float operator()(int x, int y) const;
 
   void t(Matrix&) const;
 

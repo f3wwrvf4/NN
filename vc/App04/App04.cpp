@@ -3,15 +3,18 @@
 
 #include <windows.h>
 
-
-#include "NN_net.h"
-#include "NN_mnist.h"
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <assert.h>
 #include <new>
 #include <string>
 #include <list>
+
+
+#include <NN_net.h>
+#include <NN_mnist.h>
+#include <NN_iris.h>
 
 #include <stdlib.h> 
 #include <iostream> 
@@ -39,17 +42,57 @@ void  _cdecl operator delete(void *p)
 
 int main()
 {
-  int layer_num = 5;
-  int node_num[] = { 3, 5, 3, 4,  2 };
+  NN::Iris iris;
+  iris.LoadData();
 
-  NN::Network net(layer_num, node_num, 8);
+  int dataCount = iris.GetTrainDataCount();
 
-  net.train();
-  net.save("nand.nn");
+  int node_num[] = { NN::Iris::DataSize, 10, 10, NN::Iris::LabelSize };
+  int layer_num = ARRAY_NUM(node_num);
 
-  NN::Vector in(3);
-  in[0] = 1, in[1] = 1, in[2] = 0;
-  std::cout << net.eval(in);
+  const char* fpath = "iris.nn";
+  {
+    int batch_size = 5;
+
+    NN::Network net(layer_num, node_num, batch_size);
+    net.load(fpath);
+
+    NN::Matrix in(batch_size, NN::Iris::DataSize+1);
+    NN::Matrix out(batch_size, NN::Iris::LabelSize);
+    const int count = dataCount / batch_size;
+
+    int train = 1000;
+    while (--train) {
+      iris.shuffle();
+      for (int i = 0; i < count; ++i) {
+        int idx = i*batch_size;
+        std::cout << std::setw(2)<< idx << ":";
+        net.train(
+          iris.GetTrainInputData(idx, batch_size, &in),
+          iris.GetTrainOutputData(idx, batch_size, &out));
+      }
+    }
+    net.save(fpath);
+  }
+
+  {
+    NN::Network net(layer_num, node_num, 1);
+    net.load(fpath);
+
+    NN::Matrix in(1, NN::Iris::DataSize+1);
+    NN::Matrix out(1, NN::Iris::LabelSize);
+
+    int count = iris.GetTestDataCount();
+    for (int i = 0; i < count; ++i) {
+      const NN::Matrix& res = 
+        net.eval(iris.GetTestInputData(i, 1, &in));
+      iris.GetTestOutputData(i, 1, &out);
+
+      std::cout << out;
+      std::cout << res;
+    }
+  }
+
 
   getchar();
   return 0;

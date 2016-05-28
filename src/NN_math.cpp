@@ -52,17 +52,25 @@ void Matrix::clear()
   m_buff = 0;
 }
 
+float& NN::Matrix::operator()(int x, int y)
+{
+  _ASSERT((y*row() + x)< (row()*col()));
+  return m_buff[y*row() + x];
+}
+float NN::Matrix::operator()(int x, int y) const
+{
+  _ASSERT((y*row() + x)< (row()*col()));
+  return m_buff[y*row() + x];
+}
+
+
  void Matrix::t(Matrix& mat) const
 {
-//  Matrix mat(m_col_size, m_row_size);
-
   for (int i = 0; i < m_row_size; ++i) {
     for (int j = 0; j < m_col_size; ++j) {
       mat(j, i) = (*this)(i, j);
     }
   }
-//  return mat;
-
 }
 
 std::vector<float> Vector::vec() const
