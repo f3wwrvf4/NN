@@ -36,6 +36,7 @@ void Iris::LoadData()
       ifs >> f[0] >> c >> f[1] >> c >> f[2] >> c >> f[3] >> c >> str;
 
       int id = line & 1;
+      bool fail = false;
       if (strcmp(str, "setosa") == 0) {
         o[0] = 1.0f;
         ++count[id][0];
@@ -45,12 +46,15 @@ void Iris::LoadData()
       } else if (strcmp(str, "virginica") == 0) {
         o[2] = 1.0f;
         ++count[id][2];
-      }
-
-      if (line & 1) {
-        trainData.push_back(Data(f, o));
       } else {
-        testData.push_back(Data(f, o));
+        fail = true;
+      }
+      if (!fail) {
+        if (line & 1) {
+          trainData.push_back(Data(f, o));
+        } else {
+          testData.push_back(Data(f, o));
+        }
       }
       ++line;
     }

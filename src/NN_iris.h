@@ -30,15 +30,17 @@ private:
 
   struct Data
   {
-    Data(float in[3], float ou[3])
+    Data(float in[DataSize], float ou[LabelSize])
     {
-      for (int i = 0; i < 3; ++i) {
+      for (int i = 0; i < DataSize; ++i) {
         input[i] = in[i];
+      }
+      for (int i = 0; i < LabelSize; ++i) {
         out[i] = ou[i];
       }
     }
-    float input[3];
-    float out[3];
+    float input[DataSize];
+    float out[LabelSize];
   };
 
   std::vector<Data> trainData;

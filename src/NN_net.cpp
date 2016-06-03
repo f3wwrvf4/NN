@@ -91,7 +91,7 @@ void Network::train(const Matrix& input, const Matrix& output)
       }
     }
 
-    if (error < 0.01f) {
+    if (error < 0.1f) {
       for (int i = 0; i < batch_num; ++i) {
         for (int j = 0; j < NodeL; ++j) {
           float t = output(i, j);
@@ -100,10 +100,15 @@ void Network::train(const Matrix& input, const Matrix& output)
         }
       }
 //      std::cout << iTrain << ":" << error << std::endl;
-      std::cout << "› " << std::setw(3) << iTrain << ":" << std::setw(8) << std::left << error << std::endl;
+//      std::cout << "› " << std::setw(6) << iTrain << ":" << std::setw(8) << std::left << error << std::endl;
       break;
-    }else if((iTrain%99)==0){
-      std::cout << "~ "<< std::setw(3) << iTrain << ":" << std::setw(8) << std::left << error << std::endl;
+    }else if((iTrain%2000)==0){
+
+//      std::cout << "~ "<< std::setw(6) << iTrain << ":" << std::setw(8) << std::left << error << std::endl;
+//      std::cout << input;
+//      std::cout << output;
+//      std::cout << out;
+
       break;
     }
 
@@ -142,7 +147,6 @@ void Network::save(const char* fpath) const
     int sz = node_num[i];
     ofs << sz << " ";
   }
-  ofs << batch_num << std::endl;
 
   for (int i = 0; i < layer_num - 1; ++i) {
     layers[i]->save(ofs);
@@ -153,6 +157,7 @@ void Network::save(const char* fpath) const
 
 Network* Network::create(const char* fpath)
 {
+#if 0
   int layer_num;
   int* node_num;
   int batch_num;
@@ -163,14 +168,15 @@ Network* Network::create(const char* fpath)
   for (int i = 0; i < layer_num; ++i) {
     ifs >> node_num[i];
   }
-  ifs >> batch_num;
 
   Network* net = new Network(layer_num, node_num, batch_num);
   for (int i = 0; i < layer_num - 1; ++i) {
     net->layers[i]->load(ifs);
   }
-
   return net;
+#else
+  return 0;
+#endif
 }
 
 void Network::load(const char* fpath)
@@ -186,8 +192,6 @@ void Network::load(const char* fpath)
     ifs >> ival;
     if (ival != sz) return;
   }
-  ifs >> ival;
-  if (ival != batch_num) return;
 
   for (int i = 0; i < layer_num - 1; ++i) {
     layers[i]->load(ifs);
