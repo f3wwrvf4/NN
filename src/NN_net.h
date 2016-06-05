@@ -220,21 +220,6 @@ struct Layer
   }
   const Matrix* back(const Matrix* out_delta)
   {
-#if 0
-    NN::Mul(*out_delta, input_trn, rdw);
-
-    if (prev) {
-      (weight).t(weight_trn);
-      NN::Mul(weight_trn, *out_delta, delta);
-      NN::Hadamard(prev->differ, delta, delta);
-    }
-
-    const float eps = 0.1f;
-    NN::Mul(-eps, rdw, rdw);
-    NN::Add(weight, rdw, weight);
-
-    return &delta;
-#else
     if (prev) {
       (weight).t(weight_trn);
       calcDelta(weight_trn, *out_delta, prev->differ, delta);
@@ -244,7 +229,6 @@ struct Layer
     calcWeight(*out_delta, input_trn, -eps, weight);
 
     return &delta;
-#endif
   }
 
   const Matrix* eval(const Matrix* input)
@@ -346,45 +330,3 @@ struct Network
 };
 }
 
-
-#if 0
-namespace Old{
-class Network
-{
-  const int W_NUM;
-  const int I_NUM;
-  const int L_LAST;
-  const int L_NUM;
-  const int D_NUM;
-  const int D_LAST;
-
-  Matrix** weights;
-  Vector** inputs;
-  Vector** backs;
-  Vector** deltas;
-  Matrix** deltas_t;
-
-public:
-  Network(int*L, int l_num);
-  ~Network();
-
-  void train(const TrainData* td_tbl, int num);
-  std::vector<float> eval(std::vector<float> input);
-
-  void save(const char* fpath);
-  static Network* CreateFromFile(const char* fpath);
-
-  float sigmoid(float v)
-  {
-    return 1.0f / (1.0f + exp(-v));
-  }
-
-protected:
-  void feedForward();
-  void backPropagate(const TrainData& data);
-
-}; // Network
-
-}
-
-#endif

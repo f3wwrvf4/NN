@@ -1,20 +1,39 @@
 #pragma once
 
 #include <vector>
+#include <NN_math.h>
 
 namespace NN
 {
 class MNIST
 {
+public:
+  static const int DataSize = 26*26;
+  static const int LabelSize = 10;
+
+  MNIST();
+  ~MNIST();
+
+  void LoadData();
+
+  int GetTrainDataCount() const;
+  const Matrix& GetTrainInputData(int idx, int count, NN::Matrix* mat) const;
+  const Matrix& GetTrainOutputData(int idx, int count, NN::Matrix* mat) const;
+
+  int GetTestDataCount() const;
+  const Matrix& GetTestInputData(int idx, int count, NN::Matrix* mat) const;
+  const Matrix& GetTestOutputData(int idx, int count, NN::Matrix* mat) const;
+
+  void shuffle();
+
+
+private:
   std::vector<float>* data;
   std::vector<float>* label;
   int img_count;
   int img_row;
   int img_col;
 
-public:
-  MNIST();
-  ~MNIST();
 
   void loadTrainData();
   void loadTestData() {/* todo */}
@@ -41,8 +60,6 @@ public:
   {
     return label[idx];
   }
-
-private:
   int reverseByte(int num);
 };
 

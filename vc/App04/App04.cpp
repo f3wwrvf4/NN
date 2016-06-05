@@ -52,7 +52,7 @@ int main()
 
   const char* fpath = "iris.nn";
   {
-    int batch_size = 10;
+    int batch_size = 3;
 
     NN::Network net(layer_num, node_num, batch_size);
     net.load(fpath);
