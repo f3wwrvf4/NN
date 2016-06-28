@@ -164,13 +164,12 @@ struct Logistic
 };
 
 
-template <class TYPE>
-struct Layer
+struct LayerBase
 {
-  Layer* prev;
-  Layer* next;
+  LayerBase* prev;
+  LayerBase* next;
 
-  Layer(int _batch_num, int _node1, int _node2) :
+  LayerBase(int _batch_num, int _node1, int _node2) :
     input_trn(_node1, _batch_num),
     out(_batch_num, _node2),
     out_vec(1, _node2),
@@ -187,7 +186,7 @@ struct Layer
     weight.random();
     prev = next = 0;
   }
-  ~Layer()
+  ~LayerBase()
   {
   }
 
@@ -206,39 +205,6 @@ struct Layer
   NN::Matrix delta;
   NN::Matrix differ;
   NN::Matrix rdw;
-
-  const Matrix* forward(const Matrix* input)
-  {
-    if (next)
-      TYPE::calcMid(weight, *input, out, differ);
-    else
-      TYPE::calcOut(weight, *input, out);
-
-    input->t(input_trn);
-
-    return &out;
-  }
-  const Matrix* back(const Matrix* out_delta)
-  {
-    if (prev) {
-      (weight).t(weight_trn);
-      calcDelta(weight_trn, *out_delta, prev->differ, delta);
-    }
-
-    const float eps = 0.01f;
-    calcWeight(*out_delta, input_trn, -eps, weight);
-
-    return &delta;
-  }
-
-  const Matrix* eval(const Matrix* input)
-  {
-    if (next)
-      TYPE::evalMid(weight, *input, out_vec);
-    else
-      TYPE::evalOut(weight, *input, out_vec);
-    return &out_vec;
-  }
 
   static void calcDelta(const Matrix& m1, const Matrix& m2, const Matrix& differ, Matrix& delta)
   {
@@ -307,9 +273,53 @@ struct Layer
 
   void save(std::ostream& ost) const;
   void load(std::istream& ist);
+
+  virtual const Matrix* forward(const Matrix*) = 0;
+  virtual const Matrix* back(const Matrix*) = 0;
+  virtual const Matrix* eval(const Matrix*) = 0;
 };
 
+template <class TYPE>
+struct Layer : public LayerBase
+{
+  Layer(int _batch_num, int _node1, int _node2) :
+    LayerBase(_batch_num, _node1, _node2)
+  {}
 
+
+  const Matrix* forward(const Matrix* input)
+  {
+    if (next)
+      TYPE::calcMid(weight, *input, out, differ);
+    else
+      TYPE::calcOut(weight, *input, out);
+
+    input->t(input_trn);
+
+    return &out;
+  }
+  const Matrix* back(const Matrix* out_delta)
+  {
+    if (prev) {
+      (weight).t(weight_trn);
+      calcDelta(weight_trn, *out_delta, prev->differ, delta);
+    }
+
+    const float eps = 0.01f;
+    calcWeight(*out_delta, input_trn, -eps, weight);
+
+    return &delta;
+  }
+
+  const Matrix* eval(const Matrix* input)
+  {
+    if (next)
+      TYPE::evalMid(weight, *input, out_vec);
+    else
+      TYPE::evalOut(weight, *input, out_vec);
+    return &out_vec;
+  }
+};
 
 struct Network
 {
@@ -322,7 +332,7 @@ struct Network
   void load(const char* fpath);
   static Network* create(const char* fpath);
 
-  NN::Layer<Logistic>** layers;
+  NN::LayerBase** layers;
   const int layer_num;
   int* node_num;
   const int batch_num;

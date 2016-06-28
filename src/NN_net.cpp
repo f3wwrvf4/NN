@@ -7,14 +7,12 @@
 
 namespace NN
 {
-template <class T>
-void Layer<T>::save(std::ostream& ost) const
+void LayerBase::save(std::ostream& ost) const
 {
   ost << weight;
 }
 
-template <class T>
-void Layer<T>::load(std::istream& ist)
+void LayerBase::load(std::istream& ist)
 {
   ist >> weight;
 }
@@ -31,9 +29,9 @@ Network::Network(int layer_num_, const int* node_num_, int batch_num_):
   const int layers_len = layer_num - 1;
   const int last_layer = layer_num - 1;
 
-  layers = new Layer<Logistic>*[layers_len];
+  layers = new LayerBase*[layers_len];
 
-  NN::Layer<Logistic>* prev = 0;
+  NN::LayerBase* prev = 0;
   for (int i = 0; i < layers_len; ++i) {
     const bool isLast = i == (layers_len - 1);
     const int node1 = node_num[i] + 1;
@@ -66,7 +64,7 @@ void Network::train(const Matrix& input, const Matrix& output)
 
   //  NN::Matrix input(batch_num, Node1);
   NN::Matrix delta_o(batch_num, NodeL);
-  NN::Layer<Logistic>* layer;
+  NN::LayerBase* layer;
 
   float error = 0;
   int iTrain = 0;

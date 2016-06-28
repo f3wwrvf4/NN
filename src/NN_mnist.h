@@ -14,13 +14,14 @@ public:
   MNIST();
   ~MNIST();
 
-  void LoadData();
+  void LoadTrainData();
+  void LoadTestData();
 
-  int GetTrainDataCount() const;
+  int GetTrainDataCount() const { return (int)trainData.size(); }
   const Matrix& GetTrainInputData(int idx, int count, NN::Matrix* mat) const;
   const Matrix& GetTrainOutputData(int idx, int count, NN::Matrix* mat) const;
 
-  int GetTestDataCount() const;
+  int GetTestDataCount() const { return (int)testData.size(); }
   const Matrix& GetTestInputData(int idx, int count, NN::Matrix* mat) const;
   const Matrix& GetTestOutputData(int idx, int count, NN::Matrix* mat) const;
 
@@ -28,15 +29,31 @@ public:
 
 
 private:
-  std::vector<float>* data;
-  std::vector<float>* label;
+
+  struct Data
+  {
+    Data(float in[DataSize], float ou[LabelSize])
+    {
+      if(in)
+        for (int i = 0; i < DataSize; ++i) {
+          input[i] = in[i];
+        }
+      if(ou)
+        for (int i = 0; i < LabelSize; ++i) {
+          out[i] = ou[i];
+        }
+    }
+    float input[DataSize];
+    float out[LabelSize];
+  };
+
+  void loadData(const char* data_path, const char* label_path, std::vector<Data>&);
+
+  std::vector<Data> trainData;
+  std::vector<Data> testData;
   int img_count;
   int img_row;
   int img_col;
-
-
-  void loadTrainData();
-  void loadTestData() {/* todo */}
 
   int count() const
   {
@@ -52,15 +69,19 @@ private:
     return img_col;
   }
 
-  const std::vector<float>& imageData(int idx) const
+  int reverseByte(int num)
   {
-    return data[idx];
+    char bt[4];
+    char* pt = (char*)(&num);
+
+    bt[3] = *pt++;
+    bt[2] = *pt++;
+    bt[1] = *pt++;
+    bt[0] = *pt;
+
+    return *(int*)(bt);
   }
-  const std::vector<float>& labelData(int idx) const
-  {
-    return label[idx];
-  }
-  int reverseByte(int num);
+
 };
 
 }
