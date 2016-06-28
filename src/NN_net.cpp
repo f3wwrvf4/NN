@@ -17,13 +17,13 @@ void LayerBase::load(std::istream& ist)
   ist >> weight;
 }
 
-Network::Network(int layer_num_, const int* node_num_, int batch_num_):
+Network::Network(int layer_num_, const InitParam* init_param, int batch_num_):
   layer_num(layer_num_),
   batch_num(batch_num_)
 {
   node_num = new int[layer_num];
   for (int i = 0; i < layer_num; ++i) {
-    node_num[i] = node_num_[i];
+    node_num[i] = init_param[i].node_num;
   }
 
   const int layers_len = layer_num - 1;
@@ -36,7 +36,14 @@ Network::Network(int layer_num_, const int* node_num_, int batch_num_):
     const bool isLast = i == (layers_len - 1);
     const int node1 = node_num[i] + 1;
     const int node2 = isLast ? node_num[i + 1] : node_num[i + 1] + 1;
-    layers[i] = new NN::Layer<NN::Logistic>(batch_num, node1, node2);
+    switch (init_param[i].layer_type) {
+    case NN::Network::LogisticLayer:
+      layers[i] = new NN::Layer<NN::Logistic>(batch_num, node1, node2);
+      break;
+    case SoftMaxLayer:
+      layers[i] = new NN::Layer<NN::SoftMax>(batch_num, node1, node2);
+      break;
+    }
     layers[i]->prev = prev;
     if (prev) prev->next = layers[i];
     prev = layers[i];

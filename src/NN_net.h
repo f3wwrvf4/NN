@@ -153,14 +153,137 @@ struct Logistic
     calcOut(weight, input, out);
   }
 
-  static void calcHyperbolicTangent(const Matrix& input, Matrix& out, Matrix& differential)
-  {
+};
 
-  }
-  static void calcReLU(const Matrix& input, Matrix& out, Matrix& differential)
-  {
 
+struct SoftMax
+{
+  static void calcMid(const Matrix& weight, const Matrix& input, Matrix& out, Matrix& differential)
+  {
+    const Matrix& m1 = weight;
+    const Matrix& m2 = input;
+
+    _ASSERT(m1.m_row_size == m2.m_col_size);
+    _ASSERT(m1.m_col_size == out.m_col_size);
+    _ASSERT(m2.m_row_size == out.m_row_size);
+
+    _ASSERT(out.m_col_size == differential.m_col_size);
+    _ASSERT(out.m_row_size == differential.m_row_size);
+
+    const int col1 = m1.m_col_size;
+    const int row1 = m1.m_row_size;
+    //  const int col2 = m2.m_col_size;
+    const int row2 = m2.m_row_size;
+
+    const float* p1;
+    const float* p2;
+    float* po1 = out.m_buff;
+    float* po2 = differential.m_buff;
+
+    for (int j = 0; j < col1 - 1; ++j) {
+      for (int i = 0; i < row2; ++i) {
+        *po1 = 0;
+        p1 = m1.m_buff + j*row1;
+        p2 = m2.m_buff + i;
+        for (int ii = 0; ii < row1; ++ii) {
+          *po1 += (*p1) * (*p2);
+          ++p1;
+          p2 += row2;
+        }
+        *po1 = 1.0f / (1.0f + exp(-*po1));
+        *po2 = *po1 * (1.0f - *po1);
+        ++po1;
+        ++po2;
+      }
+    }
+    for (int i = 0; i < row2; ++i) {
+      *po1++ = 1.0f;
+      *po2++ = 1.0f;
+    }
+
+    _ASSERT(po1 - out.m_buff == out.col()*out.row());
+
+    _ASSERT(po2 - differential.m_buff == differential.col()*differential.row());
   }
+  static void calcOut(const Matrix& weight, const Matrix& input, Matrix& out)
+  {
+    const Matrix& m1 = weight;
+    const Matrix& m2 = input;
+
+    _ASSERT(m1.m_row_size == m2.m_col_size);
+    _ASSERT(m1.m_col_size == out.m_col_size);
+    _ASSERT(m2.m_row_size == out.m_row_size);
+
+    const int col1 = m1.m_col_size;
+    const int row1 = m1.m_row_size;
+    //  const int col2 = m2.m_col_size;
+    const int row2 = m2.m_row_size;
+
+    const float* p1 = 0;
+    const float* p2 = 0;
+    float* po1 = out.m_buff;
+
+    for (int j = 0; j < col1; ++j) {
+      for (int i = 0; i < row2; ++i) {
+        *po1 = 0;
+        p1 = m1.m_buff + j*row1;
+        p2 = m2.m_buff + i;
+        for (int ii = 0; ii < row1; ++ii) {
+          *po1 += (*p1) * (*p2);
+          ++p1;
+          p2 += row2;
+        }
+        *po1 = 1.0f / (1.0f + exp(-*po1));
+        ++po1;
+      }
+    }
+
+    _ASSERT(po1 - out.m_buff == out.col()*out.row());
+  }
+
+  static void evalMid(const Matrix& weight, const Matrix& input, Matrix& out)
+  {
+    const Matrix& m1 = weight;
+    const Matrix& m2 = input;
+
+    _ASSERT(m1.m_row_size == m2.m_col_size);
+    _ASSERT(m1.m_col_size == out.m_col_size);
+    _ASSERT(m2.m_row_size == out.m_row_size);
+
+    const int col1 = m1.m_col_size;
+    const int row1 = m1.m_row_size;
+    //  const int col2 = m2.m_col_size;
+    const int row2 = m2.m_row_size;
+
+    const float* p1;
+    const float* p2;
+    float* po1 = out.m_buff;
+
+    for (int j = 0; j < col1 - 1; ++j) {
+      for (int i = 0; i < row2; ++i) {
+        *po1 = 0;
+        p1 = m1.m_buff + j*row1;
+        p2 = m2.m_buff + i;
+        for (int ii = 0; ii < row1; ++ii) {
+          *po1 += (*p1) * (*p2);
+          ++p1;
+          p2 += row2;
+        }
+        *po1 = 1.0f / (1.0f + exp(-*po1));
+        ++po1;
+      }
+    }
+    for (int i = 0; i < row2; ++i) {
+      *po1++ = 1.0f;
+    }
+
+    _ASSERT(po1 - out.m_buff == out.col()*out.row());
+  }
+  static void evalOut(const Matrix& weight, const Matrix& input, Matrix& out)
+  {
+    calcOut(weight, input, out);
+  }
+
 };
 
 
@@ -323,7 +446,18 @@ struct Layer : public LayerBase
 
 struct Network
 {
-  Network(int layer_num, const int* node_num, int batch_num);
+  typedef enum LayerType
+  {
+    LogisticLayer,
+    SoftMaxLayer,
+  } LayerType;
+  typedef struct InitParam
+  {
+    int node_num;
+    LayerType layer_type;
+  } InitParam;
+
+  Network(int layer_num, const InitParam* node_param, int batch_num);
   ~Network();
   void train(const Matrix& input, const Matrix& out);
   const Matrix& eval(const Matrix& input) const;
