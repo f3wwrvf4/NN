@@ -44,8 +44,13 @@ int main()
 {
   NN::MNIST mnist;
 
-  int node_num[] = { NN::MNIST::DataSize, 1000, NN::MNIST::LabelSize };
-  int layer_num = ARRAY_NUM(node_num);
+  NN::Network::InitParam
+    init_param[] = 
+  {
+    {{ NN::MNIST::DataSize, 1000}, NN::Network::LogisticLayer },
+    {{ 1000, NN::MNIST::LabelSize}, NN::Network::LogisticLayer },
+  };
+  int layer_num = ARRAY_NUM(init_param);
 
   const char* fpath = "mnist.nn";
 #if 0
@@ -54,7 +59,7 @@ int main()
     int dataCount = mnist.GetTrainDataCount();
     int batch_size = 100;
 
-    NN::Network net(layer_num, node_num, batch_size);
+    NN::Network net(layer_num, init_param, batch_size);
     net.load(fpath);
 
     NN::Matrix in(batch_size, NN::MNIST::DataSize + 1);
@@ -76,7 +81,7 @@ int main()
   }
 #else
   {
-    NN::Network net(layer_num, node_num, 1);
+    NN::Network net(layer_num, init_param, 1);
     net.load(fpath);
 
     NN::Matrix in(1, NN::MNIST::DataSize + 1);

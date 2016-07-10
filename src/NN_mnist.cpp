@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <assert.h>
+#include <algorithm>
 
 namespace NN
 {
@@ -107,6 +108,42 @@ void MNIST::loadData(const char* data_path, const char* label_path, std::vector<
     delete[] bt;
   }
 }
+
+void MNIST::shuffle()
+{
+  random_shuffle(trainData.begin(), trainData.end());
+}
+
+const Matrix& MNIST::GetTrainInputData(int idx, int count, NN::Matrix* mat) const
+{
+  _ASSERT(count == mat->row());
+  _ASSERT((DataSize + 1) == mat->col());
+  _ASSERT((idx + count) <= trainData.size());
+
+  for (int i = idx; i < idx + count; ++i) {
+    int x = i%count;
+    for (int j = 0; j < DataSize; ++j) {
+      (*mat)(x, j) = trainData[i].input[j];
+    }
+    (*mat)(x, DataSize) = 1.0f;
+  }
+  return *mat;
+}
+const Matrix& MNIST::GetTrainOutputData(int idx, int count, NN::Matrix* mat) const
+{
+  _ASSERT(count == mat->row());
+  _ASSERT(LabelSize == mat->col());
+  _ASSERT((idx + count) <= trainData.size());
+
+  for (int i = idx; i < idx + count; ++i) {
+    int x = i%count;
+    for (int j = 0; j < LabelSize; ++j) {
+      (*mat)(x, j) = trainData[i].out[j];
+    }
+  }
+  return *mat;
+}
+
 
 
 const Matrix& MNIST::GetTestInputData(int idx, int count, NN::Matrix* mat) const

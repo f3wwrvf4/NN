@@ -21,21 +21,20 @@ Network::Network(int layer_num_, const InitParam* init_param, int batch_num_):
   layer_num(layer_num_),
   batch_num(batch_num_)
 {
-  node_num = new int[layer_num];
-  for (int i = 0; i < layer_num; ++i) {
-    node_num[i] = init_param[i].node_num;
-  }
+//  node_num = new int[layer_num];
+//  for (int i = 0; i < layer_num; ++i) {
+//    node_num[i] = init_param[i].node_num;
+//  }
+//  const int layers_len = layer_num - 1;
+//  const int last_layer = layer_num - 1;
 
-  const int layers_len = layer_num - 1;
-  const int last_layer = layer_num - 1;
-
-  layers = new LayerBase*[layers_len];
+  layers = new LayerBase*[layer_num];
 
   NN::LayerBase* prev = 0;
-  for (int i = 0; i < layers_len; ++i) {
-    const bool isLast = i == (layers_len - 1);
-    const int node1 = node_num[i] + 1;
-    const int node2 = isLast ? node_num[i + 1] : node_num[i + 1] + 1;
+  for (int i = 0; i < layer_num; ++i) {
+    const bool isLast = i == (layer_num - 1);
+    const int node1 = init_param[i].node_num[0] + 1;
+    const int node2 = isLast? init_param[i].node_num[1]: init_param[i].node_num[1]+1;
     switch (init_param[i].layer_type) {
     case NN::Network::LogisticLayer:
       layers[i] = new NN::Layer<NN::Logistic>(batch_num, node1, node2);
@@ -52,22 +51,20 @@ Network::Network(int layer_num_, const InitParam* init_param, int batch_num_):
 
 Network::~Network()
 {
-  const int layers_len = layer_num - 1;
-  for (int i = 0; i < layers_len; ++i) {
+  for (int i = 0; i < layer_num; ++i) {
     delete layers[i];
   }
   delete[] layers;
-
-  delete[] node_num;
 }
 
 void Network::train(const Matrix& input, const Matrix& output)
 {
-  const int layers_len = layer_num - 1;
+//  const int layers_len = layer_num - 1;
   const int last_layer = layer_num - 1;
 
-  const int Node1 = node_num[0] + 1;
-  const int NodeL = node_num[last_layer];
+
+  const int Node1 = layers[0]->node1;
+  const int NodeL = layers[last_layer]->node2;
 
   //  NN::Matrix input(batch_num, Node1);
   NN::Matrix delta_o(batch_num, NodeL);
@@ -81,13 +78,13 @@ void Network::train(const Matrix& input, const Matrix& output)
 
     layer = layers[0];
     const NN::Matrix* in = &input;
-    for (int i = 0; i < layers_len; ++i) {
+    for (int i = 0; i < layer_num; ++i) {
       in = layer->forward(in);
       layer = layer->next;
     }
 
     // error
-    const Matrix& out = layers[layers_len - 1]->out;
+    const Matrix& out = layers[layer_num-1]->out;
     for (int i = 0; i < batch_num; ++i) {
       for (int j = 0; j < NodeL; ++j) {
         const float err = NN::Square(output(i, j) - out(i, j));
@@ -119,7 +116,7 @@ void Network::train(const Matrix& input, const Matrix& output)
 
 
     // back
-    layer = layers[layers_len - 1];
+    layer = layers[layer_num-1];
     const Matrix* delta = &delta_o;
     while (layer) {
       delta = layer->back(delta);
@@ -131,14 +128,14 @@ void Network::train(const Matrix& input, const Matrix& output)
 const Matrix& Network::eval(const Matrix& input) const
 {
   _ASSERT(input.row() == 1);
-  _ASSERT(input.col() == node_num[0] + 1);
+//  _ASSERT(input.col() == node_num[0] + 1);
 //  input(0, node_num[0]) = 1.0f;
 
   const NN::Matrix* in = &input;
-  for (int i = 0; i < layer_num - 1; ++i) {
+  for (int i = 0; i < layer_num; ++i) {
     in = layers[i]->eval(in);
   }
-  return layers[layer_num-2]->out_vec;
+  return layers[layer_num-1]->out_vec;
 }
 
 
@@ -149,11 +146,17 @@ void Network::save(const char* fpath) const
   // input
   ofs << layer_num << " ";
   for (int i = 0; i < layer_num; ++i) {
-    int sz = node_num[i];
+    int sz = layers[i]->node1;
+    ofs << sz << " ";
+  }
+  {
+    int sz = layers[layer_num-1]->node2;
     ofs << sz << " ";
   }
 
-  for (int i = 0; i < layer_num - 1; ++i) {
+  ofs << "\n";
+
+  for (int i = 0; i < layer_num; ++i) {
     layers[i]->save(ofs);
   }
 
@@ -193,12 +196,18 @@ void Network::load(const char* fpath)
   if (ival != layer_num) return;
 
   for (int i = 0; i < layer_num; ++i) {
-    int sz = node_num[i];
+    const int sz = layers[i]->node1;
     ifs >> ival;
     if (ival != sz) return;
   }
 
-  for (int i = 0; i < layer_num - 1; ++i) {
+  {
+    const int sz = layers[layer_num-1]->node2;
+    ifs >> ival;
+    if (ival != sz) return;
+  }
+
+  for (int i = 0; i < layer_num; ++i) {
     layers[i]->load(ifs);
   }
 }
