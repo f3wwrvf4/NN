@@ -27,7 +27,7 @@ struct TrainData
 
 struct Logistic
 {
-  static void calcOut(const Matrix& weight, const Matrix& input, Matrix& out)
+  static void calcOut(const Matrix& weight, const Matrix& bias, const Matrix& input, Matrix& out)
   {
     const Matrix& m1 = weight;
     const Matrix& m2 = input;
@@ -37,6 +37,8 @@ struct Logistic
     _ASSERT(m2.m_row_size == out.m_row_size);
 
     NN::Mul(m1, m2, out);
+    NN::Add(out, bias, out);
+
     float* po1 = out.m_buff;
     const int sz = out.m_col_size * out.m_row_size;
     for (int i = 0; i < sz; ++i) {
@@ -57,50 +59,6 @@ struct Logistic
       ++po1;
       ++po2;
     }
-  }
-
-
-  static void evalMid(const Matrix& weight, const Matrix& input, Matrix& out)
-  {
-    const Matrix& m1 = weight;
-    const Matrix& m2 = input;
-
-    _ASSERT(m1.m_row_size == m2.m_col_size);
-    _ASSERT(m1.m_col_size == out.m_col_size);
-    _ASSERT(m2.m_row_size == out.m_row_size);
-
-    const int col1 = m1.m_col_size;
-    const int row1 = m1.m_row_size;
-    //  const int col2 = m2.m_col_size;
-    const int row2 = m2.m_row_size;
-
-    const float* p1;
-    const float* p2;
-    float* po1 = out.m_buff;
-
-    for (int j = 0; j < col1 - 1; ++j) {
-      for (int i = 0; i < row2; ++i) {
-        *po1 = 0;
-        p1 = m1.m_buff + j*row1;
-        p2 = m2.m_buff + i;
-        for (int ii = 0; ii < row1; ++ii) {
-          *po1 += (*p1) * (*p2);
-          ++p1;
-          p2 += row2;
-        }
-        *po1 = 1.0f / (1.0f + exp(-*po1));
-        ++po1;
-      }
-    }
-    for (int i = 0; i < row2; ++i) {
-      *po1++ = 1.0f;
-    }
-
-    _ASSERT(po1 - out.m_buff == out.col()*out.row());
-  }
-  static void evalOut(const Matrix& weight, const Matrix& input, Matrix& out)
-  {
-    calcOut(weight, input, out);
   }
 
 };
@@ -177,12 +135,15 @@ struct LayerBase
   LayerBase* next;
 
   LayerBase(int _batch_num, int _node1, int _node2) :
+    input(_batch_num, _node1),
     input_trn(_node1, _batch_num),
     out(_batch_num, _node2),
     out_vec(1, _node2),
     out_trn(_node2, _batch_num),
     weight(_node1, _node2),
     weight_trn(_node2, _node1),
+    bias_vec(1, _node2),
+    bias_mat(_batch_num, _node2),
     delta(_batch_num, _node1),
     differ(_batch_num, _node2),
     rdw(_node1, _node2)
@@ -191,6 +152,7 @@ struct LayerBase
     node1 = _node1;
     node2 = _node2;
     weight.random();
+    bias_vec.random();
     prev = next = 0;
   }
   ~LayerBase()
@@ -200,6 +162,7 @@ struct LayerBase
   int batch_num;
   int node1, node2;
 
+  NN::Matrix input;
   NN::Matrix input_trn;
 
   NN::Matrix out;
@@ -209,36 +172,15 @@ struct LayerBase
   NN::Matrix weight;
   NN::Matrix weight_trn;
 
+  NN::Matrix bias_vec;
+  NN::Matrix bias_mat;
+
   NN::Matrix delta;
   NN::Matrix differ;
   NN::Matrix rdw;
 
-  static void calcDelta(const Matrix& m1, const Matrix& m2, const Matrix& differ, Matrix& delta)
-  {
-    _ASSERT(m1.m_row_size == m2.m_col_size);
-    _ASSERT(m1.m_col_size == delta.m_col_size);
-    _ASSERT(m2.m_row_size == delta.m_row_size);
-
-    Mul(m1, m2, delta);
-    Hadamard(delta, differ, delta);
-  }
-  static void calcWeight(const Matrix& m1, const Matrix& m2, Matrix& rdw, float eps, Matrix& weight)
-  {
-    _ASSERT(m1.m_row_size == m2.m_col_size);
-    _ASSERT(m1.m_col_size == weight.m_col_size);
-    _ASSERT(m2.m_row_size == weight.m_row_size);
-
-    Mul(m1, m2, rdw);
-
-    float* po1 = weight.m_buff;
-    const float* po2 = rdw.m_buff;
-    const int sz = weight.m_col_size * weight.m_row_size;
-    for (int i = 0; i < sz; ++i) {
-      *po1 += *po2 * eps;
-      ++po1;
-      ++po2;
-    }
-  }
+  static void calcDelta(const Matrix& m1, const Matrix& m2, const Matrix& differ, Matrix& delta);
+  static void calcWeight(const Matrix& m1, const Matrix& m2, Matrix& rdw, float eps, Matrix& weight, Matrix& bias);
 
   void save(std::ostream& ost) const;
   void load(std::istream& ist);
@@ -255,11 +197,20 @@ struct Layer : public LayerBase
     LayerBase(_batch_num, _node1, _node2)
   {}
 
-
-  const Matrix* forward(const Matrix* input)
+  const Matrix* forward(const Matrix* in)
   {
-    TYPE::calcOut(weight, *input, out);
-    input->t(input_trn);
+    memcpy(input.m_buff, in->m_buff, in->row()*in->col()*sizeof(float));
+
+    float*po = bias_mat.m_buff;
+    for (int i = 0; i < bias_vec.col(); ++i) {
+      const float val = bias_vec(0, i);
+      for (int j = 0; j < bias_mat.row(); ++j) {
+        *po++ = val;
+      }
+    }
+
+    TYPE::calcOut(weight, bias_mat, input, out);
+    input.t(input_trn);
     return &out;
   }
   const Matrix* back(const Matrix* out_delta)
@@ -270,18 +221,15 @@ struct Layer : public LayerBase
       calcDelta(weight_trn, *out_delta, prev->differ, delta);
     }
 
-    const float eps = 0.01f;
-    calcWeight(*out_delta, input_trn, rdw, -eps, weight);
+    const float eps = 0.1f/(float)batch_num;
+    calcWeight(*out_delta, input_trn, rdw, -eps, weight, bias_vec);
 
     return &delta;
   }
 
   const Matrix* eval(const Matrix* input)
   {
-    if (next)
-      TYPE::evalMid(weight, *input, out_vec);
-    else
-      TYPE::evalOut(weight, *input, out_vec);
+    TYPE::calcOut(weight, bias_mat, *input, out_vec);
     return &out_vec;
   }
 };

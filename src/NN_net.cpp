@@ -7,40 +7,78 @@
 
 namespace NN
 {
+void LayerBase::calcDelta(const Matrix& m1, const Matrix& m2, const Matrix& differ, Matrix& delta)
+{
+  _ASSERT(m1.m_row_size == m2.m_col_size);
+  _ASSERT(m1.m_col_size == delta.m_col_size);
+  _ASSERT(m2.m_row_size == delta.m_row_size);
+
+  Mul(m1, m2, delta);
+  Hadamard(delta, differ, delta);
+}
+
+void LayerBase::calcWeight(const Matrix& m1, const Matrix& m2, Matrix& rdw, float eps, Matrix& weight, Matrix& bias)
+{
+  _ASSERT(m1.m_row_size == m2.m_col_size);
+  _ASSERT(m1.m_col_size == weight.m_col_size);
+  _ASSERT(m2.m_row_size == weight.m_row_size);
+
+  // weight
+  {
+    Mul(m1, m2, rdw);
+    float* po1 = weight.m_buff;
+    const float* po2 = rdw.m_buff;
+    const int sz = weight.m_col_size * weight.m_row_size;
+    for (int i = 0; i < sz; ++i) {
+      *po1 += *po2 * eps;
+      ++po1;
+      ++po2;
+    }
+  }
+
+  _ASSERT(bias.col() == m1.col());
+  _ASSERT(bias.row() == 1);
+  // bias
+  {
+    float* po = bias.m_buff;
+    float* pb = m1.m_buff;
+    for (int i = 0; i < m1.col(); ++i) {
+      float val = 0;
+      for (int j = 0; j < m1.row(); ++j) {
+        val += *pb++;
+      }
+      *po++ += val*eps;
+    }
+  }
+}
+
 void LayerBase::save(std::ostream& ost) const
 {
-  ost << weight;
+  ost << weight << bias_vec;
 }
 
 void LayerBase::load(std::istream& ist)
 {
-  ist >> weight;
+  ist >> weight >> bias_vec;
 }
 
 Network::Network(int layer_num_, const InitParam* init_param, int batch_num_):
   layer_num(layer_num_),
   batch_num(batch_num_)
 {
-//  node_num = new int[layer_num];
-//  for (int i = 0; i < layer_num; ++i) {
-//    node_num[i] = init_param[i].node_num;
-//  }
-//  const int layers_len = layer_num - 1;
-//  const int last_layer = layer_num - 1;
-
   layers = new LayerBase*[layer_num];
 
   NN::LayerBase* prev = 0;
   for (int i = 0; i < layer_num; ++i) {
     const bool isLast = i == (layer_num - 1);
-    const int node1 = init_param[i].node_num[0] + 1;
-    const int node2 = isLast? init_param[i].node_num[1]: init_param[i].node_num[1]+1;
+    const int node1 = init_param[i].node_num[0];
+    const int node2 = init_param[i].node_num[1];
     switch (init_param[i].layer_type) {
     case NN::Network::LogisticLayer:
       layers[i] = new NN::Layer<NN::Logistic>(batch_num, node1, node2);
       break;
-    case SoftMaxLayer:
-      layers[i] = new NN::Layer<NN::SoftMax>(batch_num, node1, node2);
+//    case SoftMaxLayer:
+//      layers[i] = new NN::Layer<NN::SoftMax>(batch_num, node1, node2);
       break;
     }
     layers[i]->prev = prev;
@@ -59,20 +97,18 @@ Network::~Network()
 
 void Network::train(const Matrix& input, const Matrix& output)
 {
-//  const int layers_len = layer_num - 1;
   const int last_layer = layer_num - 1;
-
 
   const int Node1 = layers[0]->node1;
   const int NodeL = layers[last_layer]->node2;
 
-  //  NN::Matrix input(batch_num, Node1);
   NN::Matrix delta_o(batch_num, NodeL);
   NN::LayerBase* layer;
 
   float error = 0;
   int iTrain = 0;
-//  while (true) 
+
+//  while(true)
   {
     ++iTrain;
     error = 0;
@@ -129,15 +165,17 @@ void Network::train(const Matrix& input, const Matrix& output)
 
 const Matrix& Network::eval(const Matrix& input) const
 {
+
   _ASSERT(input.row() == 1);
 //  _ASSERT(input.col() == node_num[0] + 1);
 //  input(0, node_num[0]) = 1.0f;
 
   const NN::Matrix* in = &input;
   for (int i = 0; i < layer_num; ++i) {
-    in = layers[i]->eval(in);
+    in = layers[i]->forward(in);
   }
-  return layers[layer_num-1]->out_vec;
+
+  return *in;
 }
 
 

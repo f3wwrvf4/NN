@@ -49,8 +49,8 @@ int main()
   int dataCount = iris.GetTrainDataCount();
 
   NN::Network::InitParam init_param[] = {
-    {{NN::Iris::DataSize, 4 + 1}, NN::Network::LogisticLayer},
-    {{4 + 1, NN::Iris::LabelSize}, NN::Network::LogisticLayer},
+    {{NN::Iris::DataSize, 5}, NN::Network::LogisticLayer},
+    {{5, NN::Iris::LabelSize}, NN::Network::LogisticLayer},
   };
   int layer_num = ARRAY_NUM(init_param);
   const char* fpath = "iris.nn";
@@ -60,7 +60,7 @@ int main()
     NN::Network net(layer_num, init_param, batch_size);
 //    net.load(fpath);
 
-    NN::Matrix in(batch_size, NN::Iris::DataSize+1);
+    NN::Matrix in(batch_size, NN::Iris::DataSize);
     NN::Matrix out(batch_size, NN::Iris::LabelSize);
     const int count = dataCount / batch_size;
 
@@ -68,7 +68,7 @@ int main()
     DWORD tick = GetTickCount();
     int train = 1000;
     while (--train) {
-//      iris.shuffle();
+      iris.shuffle();
       for (int i = 0; i < count; ++i) {
         int idx = i*batch_size;
 //        std::cout << std::setw(2)<< idx << ":";
@@ -99,7 +99,7 @@ int main()
     NN::Network net(layer_num, init_param, 1);
     net.load(fpath);
 
-    NN::Matrix in(1, NN::Iris::DataSize+1);
+    NN::Matrix in(1, NN::Iris::DataSize);
     NN::Matrix out(1, NN::Iris::LabelSize);
 
     int hit = 0;
