@@ -117,7 +117,7 @@ void MNIST::shuffle()
 const Matrix& MNIST::GetTrainInputData(int idx, int count, NN::Matrix* mat) const
 {
   _ASSERT(count == mat->row());
-  _ASSERT((DataSize + 1) == mat->col());
+  _ASSERT((DataSize) == mat->col());
   _ASSERT((idx + count) <= trainData.size());
 
   for (int i = idx; i < idx + count; ++i) {
@@ -125,7 +125,6 @@ const Matrix& MNIST::GetTrainInputData(int idx, int count, NN::Matrix* mat) cons
     for (int j = 0; j < DataSize; ++j) {
       (*mat)(x, j) = trainData[i].input[j];
     }
-    (*mat)(x, DataSize) = 1.0f;
   }
   return *mat;
 }
@@ -149,7 +148,7 @@ const Matrix& MNIST::GetTrainOutputData(int idx, int count, NN::Matrix* mat) con
 const Matrix& MNIST::GetTestInputData(int idx, int count, NN::Matrix* mat) const
 {
   _ASSERT(count == mat->row());
-  _ASSERT((DataSize + 1) == mat->col());
+  _ASSERT((DataSize) == mat->col());
   _ASSERT((idx + count) <= testData.size());
 
   for (int i = idx; i < idx + count; ++i) {
@@ -157,7 +156,6 @@ const Matrix& MNIST::GetTestInputData(int idx, int count, NN::Matrix* mat) const
     for (int j = 0; j < DataSize; ++j) {
       (*mat)(x, j) = testData[i].input[j];
     }
-    (*mat)(x, DataSize) = 1.0f;
   }
   return *mat;
 }

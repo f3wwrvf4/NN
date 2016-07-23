@@ -53,22 +53,22 @@ int main()
   int layer_num = ARRAY_NUM(init_param);
 
   const char* fpath = "mnist.nn";
-#if 1
+#if 0
   {
     mnist.LoadTrainData();
     int dataCount = mnist.GetTrainDataCount();
     int batch_size = 100;
 
     NN::Network net(layer_num, init_param, batch_size);
-//    net.load(fpath);
+    net.load(fpath);
 
-    NN::Matrix in(batch_size, NN::MNIST::DataSize + 1);
+    NN::Matrix in(batch_size, NN::MNIST::DataSize);
     NN::Matrix out(batch_size, NN::MNIST::LabelSize);
     const int count = dataCount / batch_size;
 
     DWORD tick = GetTickCount();
     std::cout << "start.." << tick << std::endl;
-    int train = 2;
+    int train = 100;
     while (--train) {
       mnist.shuffle();
       for (int i = 0; i < count; ++i) {
