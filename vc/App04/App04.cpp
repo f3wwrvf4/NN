@@ -49,7 +49,7 @@ int main()
   int dataCount = iris.GetTrainDataCount();
 
   NN::Network::InitParam init_param[] = {
-    {{NN::Iris::DataSize, 4}, NN::Network::LogisticLayer},
+    {{NN::Iris::DataSize, 4 + 1}, NN::Network::LogisticLayer},
     {{4 + 1, NN::Iris::LabelSize}, NN::Network::LogisticLayer},
   };
   int layer_num = ARRAY_NUM(init_param);
