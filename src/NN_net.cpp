@@ -72,7 +72,8 @@ void Network::train(const Matrix& input, const Matrix& output)
 
   float error = 0;
   int iTrain = 0;
-  while (true) {
+//  while (true) 
+  {
     ++iTrain;
     error = 0;
 
@@ -93,6 +94,7 @@ void Network::train(const Matrix& input, const Matrix& output)
       }
     }
 
+#if 0
     if (error < 0.1f) {
       for (int i = 0; i < batch_num; ++i) {
         for (int j = 0; j < NodeL; ++j) {
@@ -102,18 +104,18 @@ void Network::train(const Matrix& input, const Matrix& output)
         }
       }
 //      std::cout << iTrain << ":" << error << std::endl;
-      std::cout << "› " << std::setw(6) << iTrain << ":" << std::setw(8) << std::left << error << std::endl;
+//      std::cout << "› " << std::setw(6) << iTrain << ":" << std::setw(8) << std::left << error << std::endl;
       break;
     }else if((iTrain%2000)==0){
 
-      std::cout << "~ "<< std::setw(6) << iTrain << ":" << std::setw(8) << std::left << error << std::endl;
+//      std::cout << "~ "<< std::setw(6) << iTrain << ":" << std::setw(8) << std::left << error << std::endl;
 //      std::cout << input;
 //      std::cout << output;
 //      std::cout << out;
 
       break;
     }
-
+#endif
 
     // back
     layer = layers[layer_num-1];

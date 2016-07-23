@@ -45,15 +45,17 @@ struct Matrix
   int m_col_size;
 };
 
-class Vector: public Matrix
+class Vector : public Matrix
 {
 public:
-  Vector():
+  Vector() :
     Matrix()
-  {}
-  Vector(int size):
+  {
+  }
+  Vector(int size) :
     Matrix(size, 1)
-  {}
+  {
+  }
   std::vector<float> vec() const;
 
   int size() const { return row(); }

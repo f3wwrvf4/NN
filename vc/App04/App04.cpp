@@ -49,13 +49,13 @@ int main()
   int dataCount = iris.GetTrainDataCount();
 
   NN::Network::InitParam init_param[] = {
-    {{NN::Iris::DataSize, 2}, NN::Network::LogisticLayer},
-    {{2, NN::Iris::LabelSize}, NN::Network::LogisticLayer},
+    {{NN::Iris::DataSize, 4}, NN::Network::LogisticLayer},
+    {{4 + 1, NN::Iris::LabelSize}, NN::Network::LogisticLayer},
   };
   int layer_num = ARRAY_NUM(init_param);
   const char* fpath = "iris.nn";
   {
-    int batch_size = 3;
+    int batch_size = 10;
 
     NN::Network net(layer_num, init_param, batch_size);
 //    net.load(fpath);
@@ -64,9 +64,11 @@ int main()
     NN::Matrix out(batch_size, NN::Iris::LabelSize);
     const int count = dataCount / batch_size;
 
+
+    DWORD tick = GetTickCount();
     int train = 1000;
     while (--train) {
-      iris.shuffle();
+//      iris.shuffle();
       for (int i = 0; i < count; ++i) {
         int idx = i*batch_size;
 //        std::cout << std::setw(2)<< idx << ":";
@@ -88,10 +90,12 @@ int main()
         }
       }
     }
+
+    std::cout << "tick = " << (GetTickCount() - tick) << std::endl;
     net.save(fpath);
   }
 
-  {
+  if(1){
     NN::Network net(layer_num, init_param, 1);
     net.load(fpath);
 
@@ -137,7 +141,6 @@ int main()
 
     std::cout << hit << "/" << count;
   }
-
 
   getchar();
   return 0;
