@@ -69,7 +69,7 @@ int main()
     DWORD tick = GetTickCount();
     std::cout << "start.." << tick << std::endl;
     int train = 100;
-    while (--train) {
+    while (train--) {
       mnist.shuffle();
       for (int i = 0; i < count; ++i) {
         int idx = i*batch_size;
@@ -88,7 +88,7 @@ int main()
     NN::Network net(layer_num, init_param, 1);
     net.load(fpath);
 
-    NN::Matrix in(1, NN::MNIST::DataSize + 1);
+    NN::Matrix in(1, NN::MNIST::DataSize);
     NN::Matrix out(1, NN::MNIST::LabelSize);
     const int LabelSize = NN::MNIST::LabelSize;
     mnist.LoadTestData();
@@ -166,6 +166,6 @@ int main()
   }
 #endif
 
-  getchar();
+//  getchar();
   return 0;
 }
