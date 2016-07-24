@@ -6,25 +6,6 @@
 
 namespace NN
 {
-
-struct TrainData
-{
-  TrainData() :
-    input({}),
-    output({})
-  {
-  }
-
-  TrainData(const std::vector<float>& inp, const std::vector<float>& out) :
-    input(inp),
-    output(out)
-  {
-  }
-
-  const std::vector<float>& input;
-  const std::vector<float>& output;
-};
-
 struct Logistic
 {
   static void calcOut(const Matrix& weight, const Matrix& bias, const Matrix& input, Matrix& out)
@@ -46,6 +27,7 @@ struct Logistic
       ++po1;
     }
   }
+
   static void calcDiff(const Matrix& out, Matrix& diff)
   {
     _ASSERT(out.m_row_size == diff.m_row_size);
@@ -117,15 +99,6 @@ struct SoftMax
   {
     _ASSERT(0);
   }
-
-  static void evalMid(const Matrix& weight, const Matrix& input, Matrix& out)
-  {
-    _ASSERT(0);
-  }
-  static void evalOut(const Matrix& weight, const Matrix& input, Matrix& out)
-  {
-    calcOut(weight, input, out);
-  }
 };
 
 
@@ -135,10 +108,8 @@ struct LayerBase
   LayerBase* next;
 
   LayerBase(int _batch_num, int _node1, int _node2) :
-    input(_batch_num, _node1),
     input_trn(_node1, _batch_num),
     out(_batch_num, _node2),
-    out_vec(1, _node2),
     out_trn(_node2, _batch_num),
     weight(_node1, _node2),
     weight_trn(_node2, _node1),
@@ -162,11 +133,9 @@ struct LayerBase
   int batch_num;
   int node1, node2;
 
-  NN::Matrix input;
   NN::Matrix input_trn;
 
   NN::Matrix out;
-  NN::Matrix out_vec;
   NN::Matrix out_trn;
 
   NN::Matrix weight;
@@ -199,8 +168,6 @@ struct Layer : public LayerBase
 
   const Matrix* forward(const Matrix* in)
   {
-    memcpy(input.m_buff, in->m_buff, in->row()*in->col()*sizeof(float));
-
     float*po = bias_mat.m_buff;
     for (int i = 0; i < bias_vec.col(); ++i) {
       const float val = bias_vec(0, i);
@@ -209,10 +176,11 @@ struct Layer : public LayerBase
       }
     }
 
-    TYPE::calcOut(weight, bias_mat, input, out);
-    input.t(input_trn);
+    TYPE::calcOut(weight, bias_mat, *in, out);
+    in->t(input_trn);
     return &out;
   }
+
   const Matrix* back(const Matrix* out_delta)
   {
     if (prev) {
@@ -229,8 +197,8 @@ struct Layer : public LayerBase
 
   const Matrix* eval(const Matrix* input)
   {
-    TYPE::calcOut(weight, bias_mat, *input, out_vec);
-    return &out_vec;
+    TYPE::calcOut(weight, bias_mat, *input, out);
+    return &out;
   }
 };
 
@@ -258,9 +226,7 @@ struct Network
 
   NN::LayerBase** layers;
   const int layer_num;
-//  int* node_num;
   const int batch_num;
-
 };
 }
 

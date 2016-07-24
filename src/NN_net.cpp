@@ -79,7 +79,7 @@ Network::Network(int layer_num_, const InitParam* init_param, int batch_num_):
       break;
 //    case SoftMaxLayer:
 //      layers[i] = new NN::Layer<NN::SoftMax>(batch_num, node1, node2);
-      break;
+//      break;
     }
     layers[i]->prev = prev;
     if (prev) prev->next = layers[i];

@@ -166,6 +166,6 @@ int main()
   }
 #endif
 
-//  getchar();
+  getchar();
   return 0;
 }
