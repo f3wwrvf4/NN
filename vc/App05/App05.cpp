@@ -48,7 +48,7 @@ int main()
     init_param[] = 
   {
     {{ NN::MNIST::DataSize, 1000}, NN::Network::LogisticLayer },
-    {{ 1000, NN::MNIST::LabelSize}, NN::Network::LogisticLayer },
+    {{ 1000, NN::MNIST::LabelSize}, NN::Network::SoftMaxLayer },
   };
   int layer_num = ARRAY_NUM(init_param);
 
@@ -68,7 +68,7 @@ int main()
 
     DWORD tick = GetTickCount();
     std::cout << "start.." << tick << std::endl;
-    int train = 100;
+    int train = 200;
     while (train--) {
       mnist.shuffle();
       for (int i = 0; i < count; ++i) {

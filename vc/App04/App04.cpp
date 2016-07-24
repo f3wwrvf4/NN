@@ -50,7 +50,7 @@ int main()
 
   NN::Network::InitParam init_param[] = {
     {{NN::Iris::DataSize, 5}, NN::Network::LogisticLayer},
-    {{5, NN::Iris::LabelSize}, NN::Network::LogisticLayer},
+    {{5, NN::Iris::LabelSize}, NN::Network::SoftMaxLayer},
   };
   int layer_num = ARRAY_NUM(init_param);
   const char* fpath = "iris.nn";
@@ -58,7 +58,7 @@ int main()
     int batch_size = 10;
 
     NN::Network net(layer_num, init_param, batch_size);
-//    net.load(fpath);
+    net.load(fpath);
 
     NN::Matrix in(batch_size, NN::Iris::DataSize);
     NN::Matrix out(batch_size, NN::Iris::LabelSize);

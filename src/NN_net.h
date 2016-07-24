@@ -17,6 +17,7 @@ struct Logistic
     _ASSERT(m1.m_col_size == out.m_col_size);
     _ASSERT(m2.m_row_size == out.m_row_size);
 
+    // U=WX+BÇçÏÇÈ
     NN::Mul(m1, m2, out);
     NN::Add(out, bias, out);
 
@@ -48,7 +49,7 @@ struct Logistic
 
 struct SoftMax
 {
-  static void calcOut(const Matrix& weight, const Matrix& input, Matrix& out)
+  static void calcOut(const Matrix& weight, const Matrix& bias, const Matrix& input, Matrix& out)
   {
     const Matrix& m1 = weight;
     const Matrix& m2 = input;
@@ -57,43 +58,28 @@ struct SoftMax
     _ASSERT(m1.m_col_size == out.m_col_size);
     _ASSERT(m2.m_row_size == out.m_row_size);
 
-    Mul(weight, input, out);
+    // U=WX+BÇçÏÇÈ
+    NN::Mul(m1, m2, out);
+    NN::Add(out, bias, out);
 
-    const int col1 = m1.m_col_size;
-    const int row1 = m1.m_row_size;
-    //  const int col2 = m2.m_col_size;
-    const int row2 = m2.m_row_size;
-
-    const float* p1 = 0;
-    const float* p2 = 0;
-    float* po1 = out.m_buff;
-
-    for (int j = 0; j < col1; ++j) {
-      // calc weight value
-      float* pws = po1; // weight sum
-      float max_val = 0;
-      for (int i = 0; i < row2; ++i) {
-        if (fabs(max_val) < fabs(*pws)) {
-          max_val = *pws;
+    for (int i = 0; i < out.row(); ++i) {
+      float max_val = 0.0f;
+      for (int j = 0; j < out.col(); ++j) {
+        const float val = out(i, j);
+        if (fabs(max_val) < fabs(val)) {
+          max_val = val;
         }
-        ++pws;
       }
-      float expsum = 0;
-      float* ep = po1;
-      for (int i = 0; i < row2; ++i) {
-        const float e = exp(*ep - max_val);
-        *ep = e;
-        expsum += e;
-        ++ep;
+      float sum = 0.0f;
+      for (int j = 0; j < out.col(); ++j) {
+        out(i, j) -= max_val;
+        out(i, j) = exp(out(i, j));
+        sum += out(i, j);
       }
-
-      for (int i = 0; i < row2; ++i) {
-        *(po1) /= expsum;
-        ++po1;
+      for (int j = 0; j < out.col(); ++j) {
+        out(i, j) /= sum;
       }
     }
-
-    _ASSERT(po1 - out.m_buff == out.col()*out.row());
   }
   static void calcDiff(const Matrix& out, Matrix& diff)
   {
@@ -178,13 +164,15 @@ struct Layer : public LayerBase
 
     TYPE::calcOut(weight, bias_mat, *in, out);
     in->t(input_trn);
+    if (next) {
+      TYPE::calcDiff(out, differ);
+    }
     return &out;
   }
 
   const Matrix* back(const Matrix* out_delta)
   {
     if (prev) {
-      TYPE::calcDiff(prev->out, prev->differ);
       (weight).t(weight_trn);
       calcDelta(weight_trn, *out_delta, prev->differ, delta);
     }
