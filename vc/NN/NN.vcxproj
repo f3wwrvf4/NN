@@ -123,6 +123,7 @@
     <ClCompile Include="..\..\src\NN_net.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\NN_fw.h" />
     <ClInclude Include="..\..\src\NN_iris.h" />
     <ClInclude Include="..\..\src\NN_math.h" />
     <ClInclude Include="..\..\src\NN_mnist.h" />

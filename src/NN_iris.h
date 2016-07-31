@@ -15,6 +15,8 @@ public :
   ~Iris();
 
   void LoadData();
+  void LoadTrainData() { LoadData(); }
+  void LoadTestData() { LoadData(); }
 
   int GetTrainDataCount() const;
   const Matrix& GetTrainInputData(int idx, int count, NN::Matrix* mat) const;
