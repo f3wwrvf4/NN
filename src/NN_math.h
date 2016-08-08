@@ -26,12 +26,7 @@ struct Matrix
 
   void t(Matrix&) const;
 
-  void random()
-  {
-    size_t sz = m_row_size * m_col_size;
-    for (int i = 0; i < sz; ++i)
-      m_buff[i] = rand() / (float)RAND_MAX - 0.5f;
-  }
+  void random();
 
   friend std::ostream& operator <<(std::ostream& ost, const Matrix& mat);
   friend std::istream& operator >>(std::istream& ist, Matrix& mat);

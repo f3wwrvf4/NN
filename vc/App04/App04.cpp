@@ -28,7 +28,7 @@ int main()
 
   DWORD tick = GetTickCount();
   std::cout << "start.." << tick << std::endl;
-  NN::Train(content, fpath, init_param, layer_num, batch_size, train_count);
+//  NN::Train(content, fpath, init_param, layer_num, batch_size, train_count);
   std::cout << "tick = " << (GetTickCount() - tick) << std::endl;
 
   NN::Test(content, fpath, init_param, layer_num);

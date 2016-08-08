@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <vector>
 
+#include <cublas_v2.h>
+
 namespace NN
 {
 //
@@ -52,15 +54,28 @@ void Matrix::clear()
   m_buff = 0;
 }
 
+void Matrix::random()
+{
+  for (int j = 0; j < col(); ++j)
+    for (int i = 0; i < row(); ++i)
+      (*this)(i, j) = rand() / (float)RAND_MAX - 0.5f;
+}
+
 float& NN::Matrix::operator()(int x, int y)
 {
-  _ASSERT((y*row() + x)< (row()*col()));
-  return m_buff[y*row() + x];
+  _ASSERT(0<=x);
+  _ASSERT(0<=y);
+  _ASSERT(x<row());
+  _ASSERT(y<col());
+  return m_buff[x*col() + y];
 }
 float NN::Matrix::operator()(int x, int y) const
 {
-  _ASSERT((y*row() + x)< (row()*col()));
-  return m_buff[y*row() + x];
+  _ASSERT(0<=x);
+  _ASSERT(0<=y);
+  _ASSERT(x<row());
+  _ASSERT(y<col());
+  return m_buff[x*col() + y];
 }
 
 
@@ -91,24 +106,18 @@ void Mul(const Matrix& m1, const Matrix& m2, Matrix& out)
 
   const int col1 = m1.m_col_size;
   const int row1 = m1.m_row_size;
-//  const int col2 = m2.m_col_size;
+  //  const int col2 = m2.m_col_size;
   const int row2 = m2.m_row_size;
 
-  const float* p1;
-  const float* p2;
-  float* po = out.m_buff;
-
-  for (int j = 0; j < col1; ++j) {
-    for (int i = 0; i < row2; ++i) {
-      *po = 0;
-      p1 = m1.m_buff + j*row1;
-      p2 = m2.m_buff + i;
+  for (int i = 0; i < row2; ++i) {
+    for (int j = 0; j < col1; ++j) {
+      float& o = out(i, j);
+      o = 0;
       for (int ii = 0; ii < row1; ++ii) {
-        *po += (*p1) * (*p2);
-        ++p1;
-        p2 += row2;
+        const float a = m1(ii, j);
+        const float b = m2(i, ii);
+        o += a * b;
       }
-      ++po;
     }
   }
 }
@@ -164,7 +173,6 @@ void Add(const Matrix& m1, const Matrix& m2, Matrix& out)
 std::ostream& operator <<(std::ostream& ost, const Matrix& mat)
 {
   ost << mat.m_row_size << " " << mat.m_col_size << std::endl;
-  float* ptr = mat.m_buff;
   for (int j = 0; j < mat.m_col_size; ++j) {
     for (int i = 0; i < mat.m_row_size; ++i) {
       ost
@@ -172,7 +180,7 @@ std::ostream& operator <<(std::ostream& ost, const Matrix& mat)
         << std::right
         << std::fixed
         << std::setprecision(4)
-        << *ptr++ << " ";
+        << mat(i,j) << " ";
     }
     ost << std::endl;
   }
@@ -191,12 +199,11 @@ std::istream& operator >>(std::istream& ist, Matrix& mat)
   mat.m_col_size = col;
 
   mat.m_buff = new float[row*col];
-  float* ptr = mat.m_buff;
-  for (int i = 0; i < row*col; ++i) {
-    float f;
-    ist >> f;
 
-    *ptr++ = f;
+  for (int j = 0; j < mat.m_col_size; ++j) {
+    for (int i = 0; i < mat.m_row_size; ++i) {
+      ist >> mat(i, j);
+    }
   }
   return ist;
 }

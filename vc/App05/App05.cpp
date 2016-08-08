@@ -11,17 +11,17 @@ int main()
   typedef NN::MNIST CONTENT;
   const char* fpath = "mnist.nn";
 
-  int mid_layer = 1000;
+  int mid_layer = 500;
   NN::Network::InitParam
     init_param[] =
   {
-    {{ CONTENT::DataSize, 1000}, NN::Network::LogisticLayer },
-    {{ 1000, CONTENT::LabelSize}, NN::Network::SoftMaxLayer },
+    {{ CONTENT::DataSize, mid_layer}, NN::Network::LogisticLayer },
+    {{ mid_layer, CONTENT::LabelSize}, NN::Network::SoftMaxLayer },
   };
   int layer_num = ARRAY_NUM(init_param);
 
   const int batch_size = 50;
-  const int train_count = 10;
+  const int train_count = 30;
 
   CONTENT content;
   content.LoadTrainData();

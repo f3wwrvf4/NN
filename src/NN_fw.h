@@ -8,7 +8,35 @@
 
 namespace NN
 {
+#if 0
+template <class CONTENT>
+void AutoEncode(CONTENT& data, const char* fpath,
+  NN::Network::InitParam* init_param, int layer_num,
+  int batch_size, int train_count)
+{
+  {
+    int dataCount = data.GetTrainDataCount();
 
+    NN::Network net(layer_num, init_param, batch_size);
+    net.load(fpath);
+
+    NN::Matrix in(batch_size, CONTENT::DataSize);
+    NN::Matrix out(batch_size, CONTENT::LabelSize);
+    const int count = dataCount / batch_size;
+
+    while (train_count--) {
+      data.shuffle();
+      for (int i = 0; i < count; ++i) {
+        int idx = i*batch_size;
+        net.train(
+          data.GetTrainInputData(idx, batch_size, &in),
+          data.GetTrainInputData(idx, batch_size, &in),      // since its autoencode
+      }
+      net.save(fpath);
+    }
+  }
+}
+#endif
 template <class CONTENT>
 void Train(CONTENT& data, const char* fpath,
   NN::Network::InitParam* init_param, int layer_num,
