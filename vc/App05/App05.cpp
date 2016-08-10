@@ -11,7 +11,7 @@ int main()
   typedef NN::MNIST CONTENT;
   const char* fpath = "mnist.nn";
 
-  int mid_layer = 500;
+  int mid_layer = 30;
   NN::Network::InitParam
     init_param[] =
   {
@@ -21,7 +21,7 @@ int main()
   int layer_num = ARRAY_NUM(init_param);
 
   const int batch_size = 50;
-  const int train_count = 30;
+  const int train_count = 10;
 
   CONTENT content;
   content.LoadTrainData();

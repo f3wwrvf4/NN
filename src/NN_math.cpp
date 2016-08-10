@@ -4,31 +4,87 @@
 #include <iomanip>
 #include <vector>
 
+#include <cuda_runtime.h>
 #include <cublas_v2.h>
+
+
+
 
 namespace NN
 {
+struct Matrix::Helper
+{
+  float* gpu_buff;
+  Helper(int size)
+  {
+    const int buff_sz = size * sizeof(gpu_buff[0]);
+    cudaMalloc((void **)&gpu_buff, buff_sz);
+  }
+  void set(int size, float* cpu_buff)
+  {
+    cublasSetVector(size, sizeof(cpu_buff[0]), cpu_buff, 1, gpu_buff, 1);
+  }
+  void clear()
+  {
+  }
+
+
+
+  static bool initialized;
+  static cublasHandle_t handle;
+  static int device;
+
+
+  static void init()
+  {
+    int status;
+
+    initialized = false;
+    device = 0;
+
+    // create
+    if (cublasCreate(&handle) != CUBLAS_STATUS_SUCCESS) {
+      std::cerr << "CUBLAS create error" << std::endl;
+    }
+
+
+  }
+  static void term()
+  {
+
+  }
+
+};
+
+
 //
 // Matrix
 //
-Matrix::Matrix()
+Matrix::Matrix():
+  helper(0)
 {
   m_row_size = 0;
   m_col_size = 0;
   m_buff = 0;
 }
 
-Matrix::Matrix(int size_x, int size_y)
+Matrix::Matrix(int size_x, int size_y):
+  helper(0)
 {
   m_row_size = size_x;
   m_col_size = size_y;
-  if (m_row_size * m_col_size != 0) {
-    m_buff = new float[m_row_size * m_col_size];
+  const int size = m_row_size * m_col_size;
+  if (size != 0) {
+    m_buff = new float[size];
   } else {
     m_buff = 0;
   }
+
+  helper = new Helper(size);
 }
-Matrix::Matrix(const Matrix& mat)
+
+Matrix::Matrix(const Matrix& mat):
+  helper(0)
 {
   m_row_size = mat.m_row_size;
   m_col_size = mat.m_col_size;
@@ -45,6 +101,8 @@ Matrix::~Matrix()
 {
   delete[] m_buff;
   m_buff = 0;
+  helper->clear();
+  delete helper;
 }
 
 void Matrix::clear()
@@ -52,6 +110,7 @@ void Matrix::clear()
   m_row_size = m_col_size = 0;
   delete[] m_buff;
   m_buff = 0;
+  helper->clear();
 }
 
 void Matrix::random()
@@ -213,5 +272,14 @@ float Square(float val)
   return val*val; 
 }
 
+void MathInit()
+{
+
+}
+
+void MathTerm()
+{
+
+}
 
 }

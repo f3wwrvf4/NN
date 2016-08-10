@@ -38,6 +38,9 @@ struct Matrix
   float* m_buff;
   int m_row_size;
   int m_col_size;
+
+  struct Helper;
+  Helper* helper;
 };
 
 class Vector : public Matrix
@@ -74,6 +77,10 @@ void Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out);
 const Matrix& Mul(float f, const Matrix& m2, Matrix& out);
 void Add(const Matrix& m1, const Matrix& m2, Matrix& out);
 
-
 float Square(float val);
+
+
+void MathInit();
+void MathTerm();
+
 }

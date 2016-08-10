@@ -12,6 +12,8 @@ int main()
 {
   using namespace NN;
 
+  NN::MathInit();
+
   Matrix a(2000, 3000);
   Matrix b(1000, 2000);
 
@@ -32,6 +34,8 @@ int main()
   }
 
   std::cout << sum << std::endl;  // -2790.61
+
+  NN::MathTerm();
 
   getchar();
 }
