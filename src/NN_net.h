@@ -27,8 +27,8 @@ struct Logistic
     _ASSERT(m2.row() == out.row());
 
     // U=WX+BÇçÏÇÈ
-    NN::Gemm(1.0f, m1, m2, 1.0f, bias, out);
-    NN::Apply(out, CalcFunc, out);
+    Matrix::Gemm(1.0f, m1, m2, 1.0f, bias, out);
+    Matrix::Apply(out, CalcFunc, out);
   }
 
   static void calcDiff(const Matrix& out, Matrix& diff)
@@ -36,7 +36,7 @@ struct Logistic
     _ASSERT(out.row() == diff.row());
     _ASSERT(out.col() == diff.col());
 
-    NN::Apply(out, CalcDiff, diff);
+    Matrix::Apply(out, CalcDiff, diff);
   }
 
 };
@@ -54,7 +54,7 @@ struct SoftMax
     _ASSERT(m2.row() == out.row());
 
     // U=WX+BÇçÏÇÈ
-    NN::Gemm(1.0f, m1, m2, 1.0f, bias, out);
+    Matrix::Gemm(1.0f, m1, m2, 1.0f, bias, out);
 
     for (int i = 0; i < out.row(); ++i) {
       float max_val = 0.0f;

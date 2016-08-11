@@ -29,23 +29,22 @@ public:
 
   void random();
 
-  friend std::ostream& operator <<(std::ostream& ost, const Matrix& mat);
-  friend std::istream& operator >>(std::istream& ist, Matrix& mat);
-  friend void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
-  friend void Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out);
-  friend const Matrix& Mul(float f, const Matrix& m2, Matrix& out);
-  friend void Add(float alpha, const Matrix& m1, float beta, const Matrix& m2, Matrix& out);
-  friend void Gemm(float alpha, const Matrix& m1, const Matrix& m2, float beta, const Matrix& m3, Matrix& out);
 
-  friend void Apply(const Matrix& m1, float(*func)(float), Matrix& out);
+static void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
+static void Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out);
+static const Matrix& Mul(float f, const Matrix& m2, Matrix& out);
+static void Add(float alpha, const Matrix& m1, float beta, const Matrix& m2, Matrix& out);
+static void Gemm(float alpha, const Matrix& m1, const Matrix& m2, float beta, const Matrix& m3, Matrix& out);
+static void Apply(const Matrix& m1, float(*func)(float), Matrix& out);
+
+  struct Helper;
+  Helper* helper;
 
 protected:
   float* m_buff;
   int m_row_size;
   int m_col_size;
 
-  struct Helper;
-  Helper* helper;
 };
 
 class Vector : public Matrix
@@ -71,20 +70,12 @@ public:
   {
     return Matrix::operator()(x, 0);
   }
-  friend void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
-  friend void Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out);
-  friend const Matrix& Mul(float f, const Matrix& m2, Matrix& out);
-  friend void Add(float alpha, const Matrix& m1, float beta, const Matrix& m2, Matrix& out);
-  friend void Gemm(float alpha, const Matrix& m1, const Matrix& m2, const Matrix& m3, Matrix& out);
 };
 
-void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
-void Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out);
-const Matrix& Mul(float f, const Matrix& m2, Matrix& out);
-void Add(float alpha, const Matrix& m1, float beta, const Matrix& m2, Matrix& out);
-void Gemm(float alpha, const Matrix& m1, const Matrix& m2, const Matrix& m3, Matrix& out);
-
 float Square(float val);
+
+std::ostream& operator <<(std::ostream& ost, const Matrix& mat);
+std::istream& operator >>(std::istream& ist, Matrix& mat);
 
 
 void MathInit();

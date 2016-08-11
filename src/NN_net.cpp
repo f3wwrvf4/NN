@@ -13,8 +13,8 @@ void LayerBase::calcDelta(const Matrix& m1, const Matrix& m2, const Matrix& diff
   _ASSERT(m1.col() == delta.col());
   _ASSERT(m2.row() == delta.row());
 
-  Mul(m1, m2, delta);
-  Hadamard(delta, differ, delta);
+  Matrix::Mul(m1, m2, delta);
+  Matrix::Hadamard(delta, differ, delta);
 }
 
 void LayerBase::calcWeight(const Matrix& m1, const Matrix& m2, Matrix& rdw, float eps, Matrix& weight, Matrix& bias)
@@ -26,8 +26,8 @@ void LayerBase::calcWeight(const Matrix& m1, const Matrix& m2, Matrix& rdw, floa
   // weight
   {
 #if 1
-    Gemm(1.0f, m1, m2, 0.0f, rdw, rdw);
-    Add(1.0f, weight, eps, rdw, weight);
+    Matrix::Gemm(1.0f, m1, m2, 0.0f, rdw, rdw);
+    Matrix::Add(1.0f, weight, eps, rdw, weight);
 #else
     Mul(m1, m2, rdw);
     float* po1 = weight.m_buff;

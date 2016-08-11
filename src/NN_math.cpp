@@ -7,9 +7,6 @@
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
 
-
-
-
 namespace NN
 {
 struct Matrix::Helper
@@ -18,17 +15,33 @@ struct Matrix::Helper
   Helper(int size)
   {
     const int buff_sz = size * sizeof(gpu_buff[0]);
-//    cudaMalloc((void **)&gpu_buff, buff_sz);
+    cudaError_t err;
+    err = cudaMalloc((void **)&gpu_buff, buff_sz);
+    if (err != cudaSuccess) {
+      std::cerr << "cublass cudaMalloc Error\n";
+    }
   }
-  void set(int size, float* cpu_buff)
+  void set(int size, const float* cpu_buff) const
   {
-//    cublasSetVector(size, sizeof(cpu_buff[0]), cpu_buff, 1, gpu_buff, 1);
+    cublasStatus_t status;
+    status = cublasSetVector(size, sizeof(cpu_buff[0]), cpu_buff, 1, gpu_buff, 1);
+    if (status != CUBLAS_STATUS_SUCCESS) {
+      std::cerr << "cublass setVector Error\n";
+    }
+  }
+  void get(int size, float* cpu_buff)
+  {
+    cublasStatus_t status;
+    status = cublasGetVector(size, sizeof(cpu_buff[0]), gpu_buff, 1, cpu_buff, 1);
+    if (status != CUBLAS_STATUS_SUCCESS) {
+      std::cerr << "cublass getVector Error\n";
+    }
   }
   void clear()
   {
+    cudaFree(gpu_buff);
+    gpu_buff = 0;
   }
-
-
 
   static bool initialized;
   static cublasHandle_t handle;
@@ -36,9 +49,6 @@ struct Matrix::Helper
 
   static void init()
   {
-#if 0
-    int status;
-
     initialized = false;
     device = 0;
 
@@ -47,14 +57,42 @@ struct Matrix::Helper
       std::cerr << "CUBLAS create error" << std::endl;
     }
 
-#endif
+    initialized = true;
   }
   static void term()
   {
+    int status;
 
+    // shutdown
+    status = cublasDestroy(handle);
+
+    if (status != CUBLAS_STATUS_SUCCESS) {
+      std::cerr << "!!!! shutdown error (A)\n";
+    }
+
+    initialized = false;
+  }
+
+  static void Gemm(float alpha, const Matrix& m1, const Matrix& m2, float beta, Matrix& out)
+  {
+    m1.helper->set(m1.row()*m1.col(), m1.m_buff);
+    m2.helper->set(m2.row()*m2.col(), m2.m_buff);
+
+    cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N,
+      m1.row(), m2.col(), m2.row(),
+      &alpha,
+      m1.helper->gpu_buff, m1.col(),
+      m2.helper->gpu_buff, m2.row(),
+      &beta,
+      out.helper->gpu_buff, out.row()
+      );
+    out.helper->get(out.row()*out.col(), out.m_buff);
   }
 
 };
+bool Matrix::Helper::initialized = false;
+cublasHandle_t Matrix::Helper::handle;
+int Matrix::Helper::device = 0;
 
 
 //
@@ -88,13 +126,15 @@ Matrix::Matrix(const Matrix& mat):
 {
   m_row_size = mat.m_row_size;
   m_col_size = mat.m_col_size;
-  if (m_row_size * m_col_size != 0) {
-    const size_t sz = m_row_size * m_col_size;
-    m_buff = new float[sz];
-    memcpy(m_buff, mat.m_buff, sizeof(float) * sz);
+  const int size = m_row_size * m_col_size;
+  if (size != 0) {
+    m_buff = new float[size];
+    memcpy(m_buff, mat.m_buff, sizeof(float) * size);
   } else {
     m_buff = 0;
   }
+
+  helper = new Helper(size);
 }
 
 Matrix::~Matrix()
@@ -157,7 +197,7 @@ std::vector<float> Vector::vec() const
   return v;
 }
 
-void Mul(const Matrix& m1, const Matrix& m2, Matrix& out)
+void Matrix::Mul(const Matrix& m1, const Matrix& m2, Matrix& out)
 {
   _ASSERT(m1.m_row_size == m2.m_col_size);
   _ASSERT(m1.m_col_size == out.m_col_size);
@@ -181,7 +221,7 @@ void Mul(const Matrix& m1, const Matrix& m2, Matrix& out)
   }
 }
 
-void Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out)
+void Matrix::Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out)
 {
   _ASSERT(m1.m_row_size == m2.m_row_size);
   _ASSERT(m1.m_row_size == out.m_row_size);
@@ -198,7 +238,7 @@ void Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out)
   }
 }
 
-const Matrix& Mul(float f, const Matrix& m2, Matrix& out)
+const Matrix& Matrix::Mul(float f, const Matrix& m2, Matrix& out)
 {
   _ASSERT(m2.m_row_size == out.m_row_size);
   _ASSERT(m2.m_col_size == out.m_col_size);
@@ -212,8 +252,8 @@ const Matrix& Mul(float f, const Matrix& m2, Matrix& out)
   }
   return out;
 }
-#if 1
-void Add(float alpha, const Matrix& m1, float beta, const Matrix& m2, Matrix& out)
+
+void Matrix::Add(float alpha, const Matrix& m1, float beta, const Matrix& m2, Matrix& out)
 {
   _ASSERT(m1.m_row_size == m2.m_row_size);
   _ASSERT(m1.m_row_size == out.m_row_size);
@@ -229,32 +269,36 @@ void Add(float alpha, const Matrix& m1, float beta, const Matrix& m2, Matrix& ou
     *po++ = alpha * *p1++ + beta * *p2++;
   }
 }
-#endif
-void Gemm(float alpha, const Matrix& m1, const Matrix& m2, float beta, const Matrix& m3, Matrix& out)
+
+void Matrix::Gemm(float alpha, const Matrix& m1, const Matrix& m2, float beta, const Matrix& m3, Matrix& out)
 {
   _ASSERT(m1.m_row_size == m2.m_col_size);
   _ASSERT(m1.m_col_size == out.m_col_size);
   _ASSERT(m2.m_row_size == out.m_row_size);
 
-  const int col1 = m1.m_col_size;
-  const int row1 = m1.m_row_size;
-  //  const int col2 = m2.m_col_size;
-  const int row2 = m2.m_row_size;
+  if (Matrix::Helper::initialized) {
+    Matrix::Helper::Gemm(alpha, m1, m2, beta, out);
+  } else {
+    const int col1 = m1.m_col_size;
+    const int row1 = m1.m_row_size;
+    //  const int col2 = m2.m_col_size;
+    const int row2 = m2.m_row_size;
 
-  for (int i = 0; i < row2; ++i) {
-    for (int j = 0; j < col1; ++j) {
-      float prod = 0;
-      for (int ii = 0; ii < row1; ++ii) {
-        const float a = m1(ii, j);
-        const float b = m2(i, ii);
-        prod += a * b;
+    for (int i = 0; i < row2; ++i) {
+      for (int j = 0; j < col1; ++j) {
+        float prod = 0;
+        for (int ii = 0; ii < row1; ++ii) {
+          const float a = m1(ii, j);
+          const float b = m2(i, ii);
+          prod += a * b;
+        }
+        out(i, j) = alpha * prod + beta * m3(i, j);
       }
-      out(i, j) = alpha * prod + beta * m3(i,j);
     }
   }
 }
 
-void Apply(const Matrix& m1, float(*func)(float), Matrix& out)
+void Matrix::Apply(const Matrix& m1, float(*func)(float), Matrix& out)
 {
   float* pi = m1.m_buff;
   float* po = out.m_buff;
@@ -267,9 +311,9 @@ void Apply(const Matrix& m1, float(*func)(float), Matrix& out)
 
 std::ostream& operator <<(std::ostream& ost, const Matrix& mat)
 {
-  ost << mat.m_row_size << " " << mat.m_col_size << std::endl;
-  for (int j = 0; j < mat.m_col_size; ++j) {
-    for (int i = 0; i < mat.m_row_size; ++i) {
+  ost << mat.row() << " " << mat.col() << std::endl;
+  for (int j = 0; j < mat.col(); ++j) {
+    for (int i = 0; i < mat.row(); ++i) {
       ost
         << std::setw(7)
         << std::right
@@ -290,13 +334,13 @@ std::istream& operator >>(std::istream& ist, Matrix& mat)
   mat.clear();
 
   ist >> row >> col;
-  mat.m_row_size = row;
-  mat.m_col_size = col;
+  mat = Matrix(row, col);
+//  mat.m_row_size = row;
+//  mat.m_col_size = col;
+//  mat.m_buff = new float[row*col];
 
-  mat.m_buff = new float[row*col];
-
-  for (int j = 0; j < mat.m_col_size; ++j) {
-    for (int i = 0; i < mat.m_row_size; ++i) {
+  for (int j = 0; j < mat.col(); ++j) {
+    for (int i = 0; i < mat.row(); ++i) {
       ist >> mat(i, j);
     }
   }
@@ -310,12 +354,12 @@ float Square(float val)
 
 void MathInit()
 {
-
+  Matrix::Helper::init();
 }
 
 void MathTerm()
 {
-
+  Matrix::Helper::term();
 }
 
 }
