@@ -39,7 +39,7 @@ public:
 
   friend void Apply(const Matrix& m1, float(*func)(float), Matrix& out);
 
-//protected:
+protected:
   float* m_buff;
   int m_row_size;
   int m_col_size;

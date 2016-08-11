@@ -29,8 +29,9 @@ int main()
   std::cout << "Mul... " << (GetTickCount() - tick) << std::endl; // 27578
 
   float sum = 0;
-  for (int i = 0; i < c.col()*c.row(); ++i) {
-    sum += c.m_buff[i];
+  for (int i = 0; i < c.row(); ++i) {
+    for (int j = 0; j < c.col(); ++j)
+    sum += c(i, j);
   }
 
   std::cout << sum << std::endl;  // -2790.61

@@ -34,7 +34,6 @@ struct Matrix::Helper
   static cublasHandle_t handle;
   static int device;
 
-
   static void init()
   {
 #if 0
@@ -213,7 +212,7 @@ const Matrix& Mul(float f, const Matrix& m2, Matrix& out)
   }
   return out;
 }
-#if 0
+#if 1
 void Add(float alpha, const Matrix& m1, float beta, const Matrix& m2, Matrix& out)
 {
   _ASSERT(m1.m_row_size == m2.m_row_size);

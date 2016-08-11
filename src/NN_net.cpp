@@ -25,7 +25,7 @@ void LayerBase::calcWeight(const Matrix& m1, const Matrix& m2, Matrix& rdw, floa
 
   // weight
   {
-#if 0
+#if 1
     Gemm(1.0f, m1, m2, 0.0f, rdw, rdw);
     Add(1.0f, weight, eps, rdw, weight);
 #else
@@ -45,6 +45,15 @@ void LayerBase::calcWeight(const Matrix& m1, const Matrix& m2, Matrix& rdw, floa
   _ASSERT(bias.row() == 1);
   // bias
   {
+#if 1
+    for (int i = 0; i < m1.col(); ++i) {
+      float val = 0;
+      for (int j = 0; j < m1.row(); ++j) {
+        val += m1(j, i);
+      }
+      bias(0, i) += val * eps;
+    }
+#else
     float* po = bias.m_buff;
     float* pb = m1.m_buff;
     for (int i = 0; i < m1.col(); ++i) {
@@ -54,6 +63,7 @@ void LayerBase::calcWeight(const Matrix& m1, const Matrix& m2, Matrix& rdw, floa
       }
       *po++ += val*eps;
     }
+#endif
   }
 }
 
