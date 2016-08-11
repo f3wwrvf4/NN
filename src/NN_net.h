@@ -8,40 +8,35 @@ namespace NN
 {
 struct Logistic
 {
+  static float CalcFunc(float val)
+  {
+    return 1.0f / (1.0f + exp(-val));
+  }
+  static float CalcDiff(float val)
+  {
+    return val * (1.0f - val);
+  }
+
   static void calcOut(const Matrix& weight, const Matrix& bias, const Matrix& input, Matrix& out)
   {
     const Matrix& m1 = weight;
     const Matrix& m2 = input;
 
-    _ASSERT(m1.m_row_size == m2.m_col_size);
-    _ASSERT(m1.m_col_size == out.m_col_size);
-    _ASSERT(m2.m_row_size == out.m_row_size);
+    _ASSERT(m1.row() == m2.col());
+    _ASSERT(m1.col() == out.col());
+    _ASSERT(m2.row() == out.row());
 
     // U=WX+BÇçÏÇÈ
-    NN::Mul(m1, m2, out);
-    NN::Add(out, bias, out);
-
-    float* po1 = out.m_buff;
-    const int sz = out.m_col_size * out.m_row_size;
-    for (int i = 0; i < sz; ++i) {
-      *po1 = 1.0f / (1.0f + exp(-*po1));
-      ++po1;
-    }
+    NN::Gemm(1.0f, m1, m2, 1.0f, bias, out);
+    NN::Apply(out, CalcFunc, out);
   }
 
   static void calcDiff(const Matrix& out, Matrix& diff)
   {
-    _ASSERT(out.m_row_size == diff.m_row_size);
-    _ASSERT(out.m_col_size == diff.m_col_size);
+    _ASSERT(out.row() == diff.row());
+    _ASSERT(out.col() == diff.col());
 
-    const float* po1 = out.m_buff;
-    float* po2 = diff.m_buff;
-    const int sz = out.m_col_size * out.m_row_size;
-    for (int i = 0; i < sz; ++i) {
-      *po2 = *po1 * (1.0f - *po1);
-      ++po1;
-      ++po2;
-    }
+    NN::Apply(out, CalcDiff, diff);
   }
 
 };
@@ -54,13 +49,12 @@ struct SoftMax
     const Matrix& m1 = weight;
     const Matrix& m2 = input;
 
-    _ASSERT(m1.m_row_size == m2.m_col_size);
-    _ASSERT(m1.m_col_size == out.m_col_size);
-    _ASSERT(m2.m_row_size == out.m_row_size);
+    _ASSERT(m1.row() == m2.col());
+    _ASSERT(m1.col() == out.col());
+    _ASSERT(m2.row() == out.row());
 
     // U=WX+BÇçÏÇÈ
-    NN::Mul(m1, m2, out);
-    NN::Add(out, bias, out);
+    NN::Gemm(1.0f, m1, m2, 1.0f, bias, out);
 
     for (int i = 0; i < out.row(); ++i) {
       float max_val = 0.0f;
@@ -150,15 +144,15 @@ struct Layer : public LayerBase
 {
   Layer(int _batch_num, int _node1, int _node2) :
     LayerBase(_batch_num, _node1, _node2)
-  {}
+  {
+  }
 
   const Matrix* forward(const Matrix* in)
   {
-    float*po = bias_mat.m_buff;
-    for (int i = 0; i < bias_vec.col(); ++i) {
-      const float val = bias_vec(0, i);
-      for (int j = 0; j < bias_mat.row(); ++j) {
-        *po++ = val;
+    for (int j = 0; j < bias_vec.col(); ++j) {
+      const float val = bias_vec(0, j);
+      for (int i = 0; i < bias_mat.row(); ++i) {
+        bias_mat(i, j) = val;
       }
     }
 
@@ -177,7 +171,7 @@ struct Layer : public LayerBase
       calcDelta(weight_trn, *out_delta, prev->differ, delta);
     }
 
-    const float eps = 0.1f/(float)batch_num;
+    const float eps = 0.1f / (float)batch_num;
     calcWeight(*out_delta, input_trn, rdw, -eps, weight, bias_vec);
 
     return &delta;

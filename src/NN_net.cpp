@@ -9,9 +9,9 @@ namespace NN
 {
 void LayerBase::calcDelta(const Matrix& m1, const Matrix& m2, const Matrix& differ, Matrix& delta)
 {
-  _ASSERT(m1.m_row_size == m2.m_col_size);
-  _ASSERT(m1.m_col_size == delta.m_col_size);
-  _ASSERT(m2.m_row_size == delta.m_row_size);
+  _ASSERT(m1.row() == m2.col());
+  _ASSERT(m1.col() == delta.col());
+  _ASSERT(m2.row() == delta.row());
 
   Mul(m1, m2, delta);
   Hadamard(delta, differ, delta);
@@ -19,21 +19,26 @@ void LayerBase::calcDelta(const Matrix& m1, const Matrix& m2, const Matrix& diff
 
 void LayerBase::calcWeight(const Matrix& m1, const Matrix& m2, Matrix& rdw, float eps, Matrix& weight, Matrix& bias)
 {
-  _ASSERT(m1.m_row_size == m2.m_col_size);
-  _ASSERT(m1.m_col_size == weight.m_col_size);
-  _ASSERT(m2.m_row_size == weight.m_row_size);
+  _ASSERT(m1.row() == m2.col());
+  _ASSERT(m1.col() == weight.col());
+  _ASSERT(m2.row() == weight.row());
 
   // weight
   {
+#if 0
+    Gemm(1.0f, m1, m2, 0.0f, rdw, rdw);
+    Add(1.0f, weight, eps, rdw, weight);
+#else
     Mul(m1, m2, rdw);
     float* po1 = weight.m_buff;
     const float* po2 = rdw.m_buff;
-    const int sz = weight.m_col_size * weight.m_row_size;
+    const int sz = weight.col() * weight.row();
     for (int i = 0; i < sz; ++i) {
       *po1 += *po2 * eps;
       ++po1;
       ++po2;
     }
+#endif
   }
 
   _ASSERT(bias.col() == m1.col());
@@ -62,7 +67,7 @@ void LayerBase::load(std::istream& ist)
   ist >> weight >> bias_vec;
 }
 
-Network::Network(int layer_num_, const InitParam* init_param, int batch_num_):
+Network::Network(int layer_num_, const InitParam* init_param, int batch_num_) :
   layer_num(layer_num_),
   batch_num(batch_num_)
 {

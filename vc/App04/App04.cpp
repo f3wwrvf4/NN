@@ -21,7 +21,7 @@ int main()
   int layer_num = ARRAY_NUM(init_param);
 
   const int batch_size = 5;
-  const int train_count = 100;
+  const int train_count = 50;
 
   CONTENT content;
   content.LoadData();

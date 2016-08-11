@@ -9,8 +9,9 @@ namespace NN
 
 class Vector;
 
-struct Matrix
+class Matrix
 {
+public:
   Matrix();
   Matrix(int size_x, int size_y);
   Matrix(const Matrix& mat);
@@ -33,8 +34,12 @@ struct Matrix
   friend void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
   friend void Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out);
   friend const Matrix& Mul(float f, const Matrix& m2, Matrix& out);
-  friend void Add(const Matrix& m1, const Matrix& m2, Matrix& out);
+  friend void Add(float alpha, const Matrix& m1, float beta, const Matrix& m2, Matrix& out);
+  friend void Gemm(float alpha, const Matrix& m1, const Matrix& m2, float beta, const Matrix& m3, Matrix& out);
 
+  friend void Apply(const Matrix& m1, float(*func)(float), Matrix& out);
+
+//protected:
   float* m_buff;
   int m_row_size;
   int m_col_size;
@@ -69,13 +74,15 @@ public:
   friend void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
   friend void Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out);
   friend const Matrix& Mul(float f, const Matrix& m2, Matrix& out);
-  friend void Add(const Matrix& m1, const Matrix& m2, Matrix& out);
+  friend void Add(float alpha, const Matrix& m1, float beta, const Matrix& m2, Matrix& out);
+  friend void Gemm(float alpha, const Matrix& m1, const Matrix& m2, const Matrix& m3, Matrix& out);
 };
 
 void Mul(const Matrix& m1, const Matrix& m2, Matrix& out);
 void Hadamard(const Matrix& m1, const Matrix& m2, Matrix& out);
 const Matrix& Mul(float f, const Matrix& m2, Matrix& out);
-void Add(const Matrix& m1, const Matrix& m2, Matrix& out);
+void Add(float alpha, const Matrix& m1, float beta, const Matrix& m2, Matrix& out);
+void Gemm(float alpha, const Matrix& m1, const Matrix& m2, const Matrix& m3, Matrix& out);
 
 float Square(float val);
 
