@@ -20,64 +20,51 @@ float MatrixSum(const NN::Matrix& mat)
   return sum;
 }
 
+void MatrixFill(NN::Matrix& mat, float val)
+{
+  for (int i = 0; i < mat.row(); ++i) {
+    for (int j = 0; j < mat.col(); ++j) {
+      mat(i, j) = val;
+    }
+  }
+}
+
+
 int main()
 {
   using namespace NN;
 
   NN::MathInit();
 
+  Matrix a(rand()%100+10, rand()%100+10);
+  Matrix b(rand()%100+10, a.row());
+  Matrix cpu_out(b.row(), a.col());
+  Matrix gpu_out;
+  const float alpha = 1.0f;
+  const float beta = 1.0f;
 
-
-
-  Matrix a(100, 13);
-  Matrix b(48, 100);
-  Matrix c(b.row(), a.col());
-  const float alpha = 0.7f;
-  const float beta = 1.3f;
-
-#if 1
-  std::srand(0xababcdcd);
   a.random();
   b.random();
-  c.random();
+  cpu_out.random();
+  gpu_out = cpu_out;
 
-#else
-  int val = 0;
-  for (int i = 0; i < a.row(); ++i) {
-    for (int j = 0; j < a.col(); ++j) {
-      a(i, j) = 0.5f + val++ * ((val%2)?-1.f:1.f);
-    }
-  }
-  val = 0;
-  for (int i = 0; i < b.row(); ++i) {
-    for (int j = 0; j < b.col(); ++j) {
-      b(i, j) = 0.5f + val++ * ((val%2)?1.f:-1.f);
-    }
-  }
-  val = 0;
-  for (int i = 0; i < c.row(); ++i) {
-    for (int j = 0; j < c.col(); ++j) {
-      c(i, j) = 0.0f;
-    }
-  }
-#endif
-
-  std::cout << MatrixSum(a) << " " << MatrixSum(b) << " " << MatrixSum(c) << "\n";
+  std::cout << MatrixSum(a) << " " << MatrixSum(b) << "\n"
+    << MatrixSum(cpu_out) << MatrixSum(gpu_out) << "\n";
 
   NN::HelperEnable(true);
   {
     DWORD tick = GetTickCount();
-    Matrix::Gemm(alpha, a, b, beta, c, c);
-    float sum = MatrixSum(c);
+    Matrix::Gemm(alpha, a, b, beta, cpu_out, cpu_out);
+    float sum = MatrixSum(cpu_out);
     DWORD count = (GetTickCount() - tick);
     std::cout << " GPU:" << sum << " Tick: " << count << std::endl;
   }
   NN::HelperEnable(false);
   {
     DWORD tick = GetTickCount();
-    Matrix::Gemm(alpha, a, b, beta, c, c);
+    Matrix::Gemm(alpha, a, b, beta, gpu_out, gpu_out);
     DWORD count = (GetTickCount() - tick);
-    float sum = MatrixSum(c);
+    float sum = MatrixSum(gpu_out);
     std::cout << " CPU:" << sum << " Tick: " << count << std::endl;
   }
 

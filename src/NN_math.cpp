@@ -90,10 +90,10 @@ struct Matrix::Helper
     cublasStatus_t status = cublasSgemm(
       handle,
       CUBLAS_OP_N, CUBLAS_OP_N,
-      m1.row(), m2.col(), m1.col(),
+      m1.col(), m2.row(), m1.row(),
       &alpha,
-      m2.helper->gpu_buff, m2.col(),
       m1.helper->gpu_buff, m1.col(),
+      m2.helper->gpu_buff, m2.col(),
       &beta,
       out.helper->gpu_buff, out.col()
       );
@@ -178,6 +178,8 @@ void Matrix::set(int size_x, int size_y)
   } else {
     m_buff = 0;
   }
+
+  helper = new Helper(size);
 }
 
 Matrix::~Matrix()
@@ -338,7 +340,7 @@ void Matrix::Gemm(float alpha, const Matrix& m1, const Matrix& m2, float beta, c
           const float b = m2(i, ii);
           prod += a * b;
         }
-        out(i, j) = alpha * prod + beta * m3(i, j);
+        out(i, j) = (alpha * prod + beta * m3(i, j));
       }
     }
   }
@@ -397,6 +399,7 @@ float Square(float val)
 void MathInit()
 {
   Matrix::Helper::init();
+  Matrix::Helper::enable = true;
 }
 
 void MathTerm()

@@ -13,7 +13,7 @@ int main()
   typedef NN::MNIST CONTENT;
   const char* fpath = "mnist.nn";
 
-  int mid_layer = 30;
+  int mid_layer = 300;
   NN::Network::InitParam
     init_param[] =
   {
