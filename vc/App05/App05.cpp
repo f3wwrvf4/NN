@@ -8,6 +8,8 @@
 
 int main()
 {
+  NN::MathInit();
+
   typedef NN::MNIST CONTENT;
   const char* fpath = "mnist.nn";
 
@@ -34,6 +36,7 @@ int main()
   content.LoadTestData();
   NN::Test(content, fpath, init_param, layer_num);
 
+  NN::MathTerm();
   getchar();
   return 0;
 }

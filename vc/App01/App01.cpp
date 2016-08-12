@@ -8,6 +8,18 @@
 #include <NN_mnist.h>
 #include <NN_iris.h>
 
+float MatrixSum(const NN::Matrix& mat)
+{
+  float sum = 0;
+  for (int i = 0; i < mat.row(); ++i) {
+    for (int j = 0; j < mat.col(); ++j) {
+      sum += mat(i, j);
+    }
+  }
+
+  return sum;
+}
+
 int main()
 {
   using namespace NN;
@@ -15,36 +27,50 @@ int main()
   NN::MathInit();
 
 #if 1
-  Matrix a(100, 100);
-  Matrix b(100, 100);
+  Matrix a(100, 13);
+  Matrix b(48, 100);
 #else
   Matrix a(2000, 3000);
   Matrix b(1000, 2000);
 #endif
+  Matrix c(b.row(), a.col());
 
+#if 1
   std::srand(0xababcdcd);
   a.random();
   b.random();
+  c.random();
 
-  Matrix c(b.row(), a.col());
-  Matrix d(b.row(), a.col());
-
-  DWORD tick = GetTickCount();
-//  Matrix::Mul(a, b, c);
-
-  Matrix::Gemm(1.0f, a, b, 0.0f, d, c);
-
-//  std::cout << c << std::endl;
-  std::cout << "Mul... " << (GetTickCount() - tick) << std::endl; // 125 / 27578
-
-  float sum = 0;
-  for (int i = 0; i < c.row(); ++i) {
-    for (int j = 0; j < c.col(); ++j) {
-      sum += c(i, j);
+#else
+  int val = 0;
+  for (int i = 0; i < a.row(); ++i) {
+    for (int j = 0; j < a.col(); ++j) {
+      a(i, j) = 0.5f + val++ * ((val%2)?-1.f:1.f);
     }
   }
+  val = 0;
+  for (int i = 0; i < b.row(); ++i) {
+    for (int j = 0; j < b.col(); ++j) {
+      b(i, j) = 0.5f + val++ * ((val%2)?1.f:-1.f);
+    }
+  }
+  val = 0;
+  for (int i = 0; i < c.row(); ++i) {
+    for (int j = 0; j < c.col(); ++j) {
+      c(i, j) = 0.0f;
+    }
+  }
+#endif
 
-  std::cout << sum << std::endl;  // 45.5688 / -2790.61
+  std::cout << MatrixSum(a) << " " << MatrixSum(b) << " " << MatrixSum(c) << "\n";
+
+  DWORD tick = GetTickCount();
+  Matrix::Gemm(1.0f, a, b, 1.33f, c, c);
+
+//  std::cout << c << std::endl;
+  std::cout << "Mul... " << (GetTickCount() - tick) << std::endl; // 125 / 24312
+
+  std::cout << MatrixSum(c) << std::endl;  // 11.2602 / -3295.46
 
   NN::MathTerm();
 

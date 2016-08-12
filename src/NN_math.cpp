@@ -21,6 +21,10 @@ struct Matrix::Helper
       std::cerr << "cublass cudaMalloc Error\n";
     }
   }
+  ~Helper()
+  {
+    clear();
+  }
   void set(int size, const float* cpu_buff) const
   {
     cublasStatus_t status;
@@ -39,8 +43,10 @@ struct Matrix::Helper
   }
   void clear()
   {
-    cudaFree(gpu_buff);
-    gpu_buff = 0;
+    if (gpu_buff) {
+      cudaFree(gpu_buff);
+      gpu_buff = 0;
+    }
   }
 
   static bool initialized;
@@ -55,6 +61,7 @@ struct Matrix::Helper
     // create
     if (cublasCreate(&handle) != CUBLAS_STATUS_SUCCESS) {
       std::cerr << "CUBLAS create error" << std::endl;
+      return;
     }
 
     initialized = true;
@@ -73,19 +80,25 @@ struct Matrix::Helper
     initialized = false;
   }
 
-  static void Gemm(float alpha, const Matrix& m1, const Matrix& m2, float beta, Matrix& out)
+  static void Gemm(float alpha, const Matrix& m1, const Matrix& m2, float beta, const Matrix& m3, Matrix& out)
   {
     m1.helper->set(m1.row()*m1.col(), m1.m_buff);
     m2.helper->set(m2.row()*m2.col(), m2.m_buff);
+    out.helper->set(m3.row()*m3.col(), m3.m_buff);
 
-    cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N,
-      m1.row(), m2.col(), m2.row(),
+    cublasStatus_t status = cublasSgemm(
+      handle,
+      CUBLAS_OP_N, CUBLAS_OP_N,
+      m1.row(), m2.col(), m1.col(),
       &alpha,
-      m1.helper->gpu_buff, m1.col(),
-      m2.helper->gpu_buff, m2.row(),
+      m1.helper->gpu_buff, m1.row(),
+      m2.helper->gpu_buff, m2.col(),
       &beta,
-      out.helper->gpu_buff, out.row()
+      out.helper->gpu_buff, out.col()
       );
+    if (status != CUBLAS_STATUS_SUCCESS) {
+      std::cerr << "gemm error\n";
+    }
     out.helper->get(out.row()*out.col(), out.m_buff);
   }
 
@@ -98,16 +111,15 @@ int Matrix::Helper::device = 0;
 //
 // Matrix
 //
-Matrix::Matrix():
-  helper(0)
+Matrix::Matrix()
 {
   m_row_size = 0;
   m_col_size = 0;
   m_buff = 0;
+  helper = 0;
 }
 
-Matrix::Matrix(int size_x, int size_y):
-  helper(0)
+Matrix::Matrix(int size_x, int size_y)
 {
   m_row_size = size_x;
   m_col_size = size_y;
@@ -117,12 +129,10 @@ Matrix::Matrix(int size_x, int size_y):
   } else {
     m_buff = 0;
   }
-
   helper = new Helper(size);
 }
 
-Matrix::Matrix(const Matrix& mat):
-  helper(0)
+Matrix::Matrix(const Matrix& mat)
 {
   m_row_size = mat.m_row_size;
   m_col_size = mat.m_col_size;
@@ -133,16 +143,26 @@ Matrix::Matrix(const Matrix& mat):
   } else {
     m_buff = 0;
   }
-
   helper = new Helper(size);
+}
+
+void Matrix::set(int size_x, int size_y)
+{
+  clear();
+
+  m_row_size = size_x;
+  m_col_size = size_y;
+  const int size = m_row_size * m_col_size;
+  if (size != 0) {
+    m_buff = new float[size];
+  } else {
+    m_buff = 0;
+  }
 }
 
 Matrix::~Matrix()
 {
-  delete[] m_buff;
-  m_buff = 0;
-  helper->clear();
-  delete helper;
+  clear();
 }
 
 void Matrix::clear()
@@ -150,7 +170,11 @@ void Matrix::clear()
   m_row_size = m_col_size = 0;
   delete[] m_buff;
   m_buff = 0;
-  helper->clear();
+  if (helper) {
+    helper->clear();
+    delete helper;
+    helper = 0;
+  }
 }
 
 void Matrix::random()
@@ -275,9 +299,11 @@ void Matrix::Gemm(float alpha, const Matrix& m1, const Matrix& m2, float beta, c
   _ASSERT(m1.m_row_size == m2.m_col_size);
   _ASSERT(m1.m_col_size == out.m_col_size);
   _ASSERT(m2.m_row_size == out.m_row_size);
+  _ASSERT(m3.row() == out.row());
+  _ASSERT(m3.col() == out.col());
 
-  if (Matrix::Helper::initialized) {
-    Matrix::Helper::Gemm(alpha, m1, m2, beta, out);
+  if (Matrix::Helper::initialized && false) {
+    Matrix::Helper::Gemm(alpha, m1, m2, beta, m3, out);
   } else {
     const int col1 = m1.m_col_size;
     const int row1 = m1.m_row_size;
@@ -334,10 +360,7 @@ std::istream& operator >>(std::istream& ist, Matrix& mat)
   mat.clear();
 
   ist >> row >> col;
-  mat = Matrix(row, col);
-//  mat.m_row_size = row;
-//  mat.m_col_size = col;
-//  mat.m_buff = new float[row*col];
+  mat.set(row, col);
 
   for (int j = 0; j < mat.col(); ++j) {
     for (int i = 0; i < mat.row(); ++i) {

@@ -8,6 +8,8 @@
 
 int main()
 {
+  NN::MathInit();
+
   typedef NN::Iris CONTENT;
   const char* fpath = "iris.nn";
 
@@ -21,7 +23,7 @@ int main()
   int layer_num = ARRAY_NUM(init_param);
 
   const int batch_size = 5;
-  const int train_count = 50;
+  const int train_count = 100;
 
   CONTENT content;
   content.LoadData();
@@ -32,6 +34,8 @@ int main()
   std::cout << "tick = " << (GetTickCount() - tick) << std::endl;
 
   NN::Test(content, fpath, init_param, layer_num);
+
+  NN::MathTerm();
 
   getchar();
   return 0;
