@@ -49,6 +49,7 @@ struct Matrix::Helper
     }
   }
 
+  static bool enable;
   static bool initialized;
   static cublasHandle_t handle;
   static int device;
@@ -91,8 +92,8 @@ struct Matrix::Helper
       CUBLAS_OP_N, CUBLAS_OP_N,
       m1.row(), m2.col(), m1.col(),
       &alpha,
-      m1.helper->gpu_buff, m1.row(),
       m2.helper->gpu_buff, m2.col(),
+      m1.helper->gpu_buff, m1.col(),
       &beta,
       out.helper->gpu_buff, out.col()
       );
@@ -103,6 +104,7 @@ struct Matrix::Helper
   }
 
 };
+bool Matrix::Helper::enable = false;
 bool Matrix::Helper::initialized = false;
 cublasHandle_t Matrix::Helper::handle;
 int Matrix::Helper::device = 0;
@@ -144,6 +146,24 @@ Matrix::Matrix(const Matrix& mat)
     m_buff = 0;
   }
   helper = new Helper(size);
+}
+
+Matrix& Matrix::operator = (const Matrix& mat)
+{
+  clear();
+
+  m_row_size = mat.m_row_size;
+  m_col_size = mat.m_col_size;
+  const int size = m_row_size * m_col_size;
+  if (size != 0) {
+    m_buff = new float[size];
+    memcpy(m_buff, mat.m_buff, sizeof(float) * size);
+  } else {
+    m_buff = 0;
+  }
+  helper = new Helper(size);
+
+  return *this;
 }
 
 void Matrix::set(int size_x, int size_y)
@@ -302,7 +322,7 @@ void Matrix::Gemm(float alpha, const Matrix& m1, const Matrix& m2, float beta, c
   _ASSERT(m3.row() == out.row());
   _ASSERT(m3.col() == out.col());
 
-  if (Matrix::Helper::initialized && false) {
+  if (Matrix::Helper::initialized && Matrix::Helper::enable) {
     Matrix::Helper::Gemm(alpha, m1, m2, beta, m3, out);
   } else {
     const int col1 = m1.m_col_size;
@@ -334,8 +354,7 @@ void Matrix::Apply(const Matrix& m1, float(*func)(float), Matrix& out)
   }
 }
 
-
-std::ostream& operator <<(std::ostream& ost, const Matrix& mat)
+std::ostream& operator << (std::ostream& ost, const Matrix& mat)
 {
   ost << mat.row() << " " << mat.col() << std::endl;
   for (int j = 0; j < mat.col(); ++j) {
@@ -353,7 +372,7 @@ std::ostream& operator <<(std::ostream& ost, const Matrix& mat)
   return ost;
 }
 
-std::istream& operator >>(std::istream& ist, Matrix& mat)
+std::istream& operator >> (std::istream& ist, Matrix& mat)
 {
   int row, col;
 
@@ -384,5 +403,11 @@ void MathTerm()
 {
   Matrix::Helper::term();
 }
+
+void HelperEnable(bool flag)
+{
+  Matrix::Helper::enable = flag;
+}
+
 
 }

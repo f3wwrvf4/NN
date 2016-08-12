@@ -15,6 +15,7 @@ public:
   Matrix();
   Matrix(int size_x, int size_y);
   Matrix(const Matrix& mat);
+  Matrix& operator = (const Matrix& mat);
   ~Matrix();
 
   void set(int size_x, int size_y);
@@ -78,5 +79,6 @@ std::istream& operator >>(std::istream& ist, Matrix& mat);
 
 void MathInit();
 void MathTerm();
+void HelperEnable(bool flag);
 
 }

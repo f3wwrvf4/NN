@@ -26,14 +26,14 @@ int main()
 
   NN::MathInit();
 
-#if 1
+
+
+
   Matrix a(100, 13);
   Matrix b(48, 100);
-#else
-  Matrix a(2000, 3000);
-  Matrix b(1000, 2000);
-#endif
   Matrix c(b.row(), a.col());
+  const float alpha = 0.7f;
+  const float beta = 1.3f;
 
 #if 1
   std::srand(0xababcdcd);
@@ -64,13 +64,22 @@ int main()
 
   std::cout << MatrixSum(a) << " " << MatrixSum(b) << " " << MatrixSum(c) << "\n";
 
-  DWORD tick = GetTickCount();
-  Matrix::Gemm(1.0f, a, b, 1.33f, c, c);
-
-//  std::cout << c << std::endl;
-  std::cout << "Mul... " << (GetTickCount() - tick) << std::endl; // 125 / 24312
-
-  std::cout << MatrixSum(c) << std::endl;  // 11.2602 / -3295.46
+  NN::HelperEnable(true);
+  {
+    DWORD tick = GetTickCount();
+    Matrix::Gemm(alpha, a, b, beta, c, c);
+    float sum = MatrixSum(c);
+    DWORD count = (GetTickCount() - tick);
+    std::cout << " GPU:" << sum << " Tick: " << count << std::endl;
+  }
+  NN::HelperEnable(false);
+  {
+    DWORD tick = GetTickCount();
+    Matrix::Gemm(alpha, a, b, beta, c, c);
+    DWORD count = (GetTickCount() - tick);
+    float sum = MatrixSum(c);
+    std::cout << " CPU:" << sum << " Tick: " << count << std::endl;
+  }
 
   NN::MathTerm();
 
