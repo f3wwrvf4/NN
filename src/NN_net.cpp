@@ -193,29 +193,37 @@ const Matrix& Network::eval(const Matrix& input) const
   return *in;
 }
 
+template <typename T>
+std::ostream& Write(std::ostream& ofs, T val)
+{
+  ofs.write((char*)&val, sizeof(T));
+  return ofs;
+}
+
+template <typename T>
+std::istream& Read(std::istream& ifs, T& val)
+{
+  ifs.read((char*)&val, sizeof(T));
+  return ifs;
+}
 
 void Network::save(const char* fpath) const
 {
-  std::ofstream ofs(fpath);
+  std::ofstream ofs(fpath, std::ios::binary);
 
   // input
-  ofs << layer_num << " ";
+  Write(ofs, layer_num);
   for (int i = 0; i < layer_num; ++i) {
     int sz = layers[i]->node1;
-    ofs << sz << " ";
+    Write(ofs, sz);
   }
   {
     int sz = layers[layer_num-1]->node2;
-    ofs << sz << " ";
+    Write(ofs, sz);
   }
-
-  ofs << "\n";
-
   for (int i = 0; i < layer_num; ++i) {
     layers[i]->save(ofs);
   }
-
-  ofs << std::endl;
 }
 
 Network* Network::create(const char* fpath)
@@ -246,19 +254,19 @@ void Network::load(const char* fpath)
 {
   int ival;
 
-  std::ifstream ifs(fpath);
-  ifs >> ival;
+  std::ifstream ifs(fpath, std::ios::binary);
+  Read(ifs, ival);
   if (ival != layer_num) return;
 
   for (int i = 0; i < layer_num; ++i) {
     const int sz = layers[i]->node1;
-    ifs >> ival;
+    Read(ifs, ival);
     if (ival != sz) return;
   }
 
   {
     const int sz = layers[layer_num-1]->node2;
-    ifs >> ival;
+    Read(ifs, ival);
     if (ival != sz) return;
   }
 

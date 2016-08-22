@@ -358,17 +358,15 @@ void Matrix::Apply(const Matrix& m1, float(*func)(float), Matrix& out)
 
 std::ostream& operator << (std::ostream& ost, const Matrix& mat)
 {
-  ost << mat.row() << " " << mat.col() << std::endl;
+  const int row = mat.row();
+  const int col = mat.col();
+  ost.write((char*)&row, sizeof(row));
+  ost.write((char*)&col, sizeof(col));
   for (int j = 0; j < mat.col(); ++j) {
     for (int i = 0; i < mat.row(); ++i) {
-      ost
-        << std::setw(7)
-        << std::right
-        << std::fixed
-        << std::setprecision(4)
-        << mat(i,j) << " ";
+      const float val = mat(i, j);
+      ost.write((char*)&val, sizeof(val));
     }
-    ost << std::endl;
   }
 
   return ost;
@@ -380,12 +378,15 @@ std::istream& operator >> (std::istream& ist, Matrix& mat)
 
   mat.clear();
 
-  ist >> row >> col;
-  mat.set(row, col);
+  ist.read((char*)&row, sizeof(row));
+  ist.read((char*)&col, sizeof(col));
 
+  mat.set(row, col);
   for (int j = 0; j < mat.col(); ++j) {
     for (int i = 0; i < mat.row(); ++i) {
-      ist >> mat(i, j);
+      float val;
+      ist.read((char*)&val, sizeof(val));
+      mat(i, j) = val;
     }
   }
   return ist;
