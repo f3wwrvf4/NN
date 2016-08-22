@@ -362,13 +362,14 @@ std::ostream& operator << (std::ostream& ost, const Matrix& mat)
   const int col = mat.col();
   ost.write((char*)&row, sizeof(row));
   ost.write((char*)&col, sizeof(col));
-  for (int j = 0; j < mat.col(); ++j) {
-    for (int i = 0; i < mat.row(); ++i) {
-      const float val = mat(i, j);
-      ost.write((char*)&val, sizeof(val));
+  float* buff = new float[row*col];
+  for (int i = 0; i < row; ++i) {
+    for (int j = 0; j < col; ++j) {
+      buff[i*col + j] = mat(i, j);
     }
   }
-
+  ost.write((char*)buff, sizeof(buff[0])*row*col);
+  delete[] buff;
   return ost;
 }
 
@@ -382,13 +383,14 @@ std::istream& operator >> (std::istream& ist, Matrix& mat)
   ist.read((char*)&col, sizeof(col));
 
   mat.set(row, col);
-  for (int j = 0; j < mat.col(); ++j) {
-    for (int i = 0; i < mat.row(); ++i) {
-      float val;
-      ist.read((char*)&val, sizeof(val));
-      mat(i, j) = val;
+  float* buff = new float[row*col];
+  ist.read((char*)buff, sizeof(buff[0])*row*col);
+  for (int i = 0; i < row; ++i) {
+    for (int j = 0; j < col; ++j) {
+      mat(i, j) = buff[i*col + j];
     }
   }
+  delete[] buff;
   return ist;
 }
 
