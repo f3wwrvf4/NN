@@ -17,25 +17,34 @@ int main()
   NN::Network::InitParam
     init_param[] =
   {
-    {{ CONTENT::DataSize, mid_layer}, NN::Network::LogisticLayer },
-    {{ mid_layer, CONTENT::LabelSize}, NN::Network::SoftMaxLayer },
+    { {CONTENT::DataSize, mid_layer}, NN::Network::LogisticLayer },
+    { {mid_layer, CONTENT::LabelSize}, NN::Network::SoftMaxLayer },
   };
   int layer_num = ARRAY_NUM(init_param);
 
   const int batch_size = 5;
-  const int train_count = 100;
+  const int train_count = 10;
 
-  CONTENT content;
-  content.LoadData();
+  NN::Network net_train(layer_num, init_param, batch_size);
+  net_train.load(fpath);
+  NN::Network net_test(layer_num, init_param, 1);
 
-  DWORD tick = GetTickCount();
-  std::cout << "start.." << tick << std::endl;
-  NN::Train(content, fpath, init_param, layer_num, batch_size, train_count);
-  std::cout << "tick = " << (GetTickCount() - tick) << std::endl;
+  CONTENT::Content trainData, testData;
+  CONTENT::LoadTrainData(trainData);
+  CONTENT::LoadTestData(testData);
 
-  NN::Test(content, fpath, init_param, layer_num);
+  int count = 50;
+  while (--count) {
+    DWORD tick = GetTickCount();
+    std::cout << "start.." << std::endl;
+    NN::Train(net_train, trainData, batch_size, train_count);
+    std::cout << "tick = " << (GetTickCount() - tick) << std::endl;
 
-  NN::MathTerm();
+    net_train.save(fpath);
+
+    net_test.load(fpath);
+    NN::Test(net_test, testData);
+  }
 
   getchar();
   return 0;

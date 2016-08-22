@@ -25,18 +25,27 @@ int main()
   const int batch_size = 50;
   const int train_count = 10;
 
-  CONTENT content;
-  content.LoadTrainData();
+  NN::Network net_train(layer_num, init_param, batch_size);
+  net_train.load(fpath);
+  NN::Network net_test(layer_num, init_param, 1);
 
-  DWORD tick = GetTickCount();
-  std::cout << "start.." << tick << std::endl;
-  NN::Train(content, fpath, init_param, layer_num, batch_size, train_count);
-  std::cout << "tick = " << (GetTickCount() - tick) << std::endl;
+  CONTENT::Content trainData, testData;
+  CONTENT::LoadTrainData(trainData);
+  CONTENT::LoadTestData(testData);
 
-  content.LoadTestData();
-  NN::Test(content, fpath, init_param, layer_num);
+  int count = 5;
+  while (--count) {
+    DWORD tick = GetTickCount();
+    std::cout << "start.." << std::endl;
+    NN::Train(net_train, trainData, batch_size, train_count);
+    std::cout << "tick = " << (GetTickCount() - tick) << std::endl;
 
-  NN::MathTerm();
+    net_train.save(fpath);
+
+    net_test.load(fpath);
+    NN::Test(net_test, testData);
+  }
+
   getchar();
   return 0;
 }

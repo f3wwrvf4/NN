@@ -8,36 +8,28 @@
 namespace NN
 {
 
-MNIST::MNIST() :
-  img_count(0),
-  img_row(0),
-  img_col(0)
-{
-}
-
-MNIST::~MNIST()
-{
-}
-
-
-void MNIST::LoadTrainData()
+void MNIST::LoadTrainData(Content& data)
 { 
   loadData(
     "../data/train-images.idx3-ubyte",
     "../data/train-labels.idx1-ubyte",
-    trainData);
+    data);
 }
 
-void MNIST::LoadTestData()
+void MNIST::LoadTestData(Content& data)
 { 
   loadData(
     "../data/t10k-images.idx3-ubyte", 
     "../data/t10k-labels.idx1-ubyte", 
-    testData);
+    data);
 }
 
-void MNIST::loadData(const char* data_path, const char* label_path, std::vector<Data>& dst)
+void MNIST::loadData(const char* data_path, const char* label_path, Content& dst)
 {
+  int img_count;
+  int img_row;
+  int img_col;
+
   // image
   {
     std::ifstream ifs_img(data_path, std::ios::in | std::ios::binary);
@@ -58,8 +50,7 @@ void MNIST::loadData(const char* data_path, const char* label_path, std::vector<
     ival = reverseByte(ival);
     img_col = ival;
 
-    trainData.reserve(img_count);
-
+    dst.reserve(img_count);
 
     // label
     unsigned char* labels = new unsigned char[img_count];
@@ -102,77 +93,11 @@ void MNIST::loadData(const char* data_path, const char* label_path, std::vector<
         fl[i] = bt[i] / 255.0f;
       }
       int d = (int)labels[di];
-      dst.push_back( Data(fl, tbl[d]) );
+      dst.push_back( fl, tbl[d] );
     }
     delete[] fl;
     delete[] bt;
   }
 }
-
-void MNIST::shuffle()
-{
-  random_shuffle(trainData.begin(), trainData.end());
-}
-
-const Matrix& MNIST::GetTrainInputData(int idx, int count, NN::Matrix* mat) const
-{
-  _ASSERT(count == mat->row());
-  _ASSERT((DataSize) == mat->col());
-  _ASSERT((idx + count) <= trainData.size());
-
-  for (int i = idx; i < idx + count; ++i) {
-    int x = i%count;
-    for (int j = 0; j < DataSize; ++j) {
-      (*mat)(x, j) = trainData[i].input[j];
-    }
-  }
-  return *mat;
-}
-const Matrix& MNIST::GetTrainOutputData(int idx, int count, NN::Matrix* mat) const
-{
-  _ASSERT(count == mat->row());
-  _ASSERT(LabelSize == mat->col());
-  _ASSERT((idx + count) <= trainData.size());
-
-  for (int i = idx; i < idx + count; ++i) {
-    int x = i%count;
-    for (int j = 0; j < LabelSize; ++j) {
-      (*mat)(x, j) = trainData[i].out[j];
-    }
-  }
-  return *mat;
-}
-
-
-
-const Matrix& MNIST::GetTestInputData(int idx, int count, NN::Matrix* mat) const
-{
-  _ASSERT(count == mat->row());
-  _ASSERT((DataSize) == mat->col());
-  _ASSERT((idx + count) <= testData.size());
-
-  for (int i = idx; i < idx + count; ++i) {
-    int x = i%count;
-    for (int j = 0; j < DataSize; ++j) {
-      (*mat)(x, j) = testData[i].input[j];
-    }
-  }
-  return *mat;
-}
-const Matrix& MNIST::GetTestOutputData(int idx, int count, NN::Matrix* mat) const
-{
-  _ASSERT(count == mat->row());
-  _ASSERT(LabelSize == mat->col());
-  _ASSERT((idx + count) <= testData.size());
-
-  for (int i = idx; i < idx + count; ++i) {
-    int x = i%count;
-    for (int j = 0; j < LabelSize; ++j) {
-      (*mat)(x, j) = testData[i].out[j];
-    }
-  }
-  return *mat;
-}
-
 
 }

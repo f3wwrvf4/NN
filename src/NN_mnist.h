@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <NN_math.h>
+#include <NN_fw.h>
 
 namespace NN
 {
@@ -10,10 +11,28 @@ class MNIST
 public:
   static const int DataSize = 26*26;
   static const int LabelSize = 10;
+  typedef ContentData<DataSize, LabelSize> Content;
 
-  MNIST();
-  ~MNIST();
+  static void LoadTrainData(Content& data);
+  static void LoadTestData(Content& data);
 
+private:
+  static void loadData(const char* data_path, const char* label_path, Content&);
+  static int reverseByte(int num)
+  {
+    char bt[4];
+    char* pt = (char*)(&num);
+
+    bt[3] = *pt++;
+    bt[2] = *pt++;
+    bt[1] = *pt++;
+    bt[0] = *pt;
+
+    return *(int*)(bt);
+  }
+
+
+#if 0
   void LoadTrainData();
   void LoadTestData();
 
@@ -26,7 +45,6 @@ public:
   const Matrix& GetTestOutputData(int idx, int count, NN::Matrix* mat) const;
 
   void shuffle();
-
 
 private:
 
@@ -47,7 +65,6 @@ private:
     float out[LabelSize];
   };
 
-  void loadData(const char* data_path, const char* label_path, std::vector<Data>&);
 
   std::vector<Data> trainData;
   std::vector<Data> testData;
@@ -69,19 +86,7 @@ private:
     return img_col;
   }
 
-  int reverseByte(int num)
-  {
-    char bt[4];
-    char* pt = (char*)(&num);
-
-    bt[3] = *pt++;
-    bt[2] = *pt++;
-    bt[1] = *pt++;
-    bt[0] = *pt;
-
-    return *(int*)(bt);
-  }
-
+#endif
 };
 
 }

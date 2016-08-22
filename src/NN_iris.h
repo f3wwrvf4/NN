@@ -2,51 +2,23 @@
 
 #include <vector>
 #include <NN_math.h>
+#include <NN_fw.h>
 
 namespace NN
 {
 class Iris
 {
-public :
+public:
   static const int DataSize = 4;
   static const int LabelSize = 3;
 
-  Iris();
-  ~Iris();
+  typedef ContentData<DataSize, LabelSize> Content;
 
-  void LoadData();
-  void LoadTrainData() { LoadData(); }
-  void LoadTestData() { LoadData(); }
-
-  int GetTrainDataCount() const;
-  const Matrix& GetTrainInputData(int idx, int count, NN::Matrix* mat) const;
-  const Matrix& GetTrainOutputData(int idx, int count, NN::Matrix* mat) const;
-
-  int GetTestDataCount() const;
-  const Matrix& GetTestInputData(int idx, int count, NN::Matrix* mat) const;
-  const Matrix& GetTestOutputData(int idx, int count, NN::Matrix* mat) const;
-
-  void shuffle();
+  static void LoadTrainData(Content& data);
+  static void LoadTestData(Content& data);
 
 private:
-
-  struct Data
-  {
-    Data(float in[DataSize], float ou[LabelSize])
-    {
-      for (int i = 0; i < DataSize; ++i) {
-        input[i] = in[i];
-      }
-      for (int i = 0; i < LabelSize; ++i) {
-        out[i] = ou[i];
-      }
-    }
-    float input[DataSize];
-    float out[LabelSize];
-  };
-
-  std::vector<Data> trainData;
-  std::vector<Data> testData;
+  static void LoadData(Content& data, bool isTrain);
 };
 
 }

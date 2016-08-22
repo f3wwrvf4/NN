@@ -28,7 +28,7 @@ namespace UnitTest
 
 
         NN::Matrix o(3, 2);
-        NN::Mul(m1, m2, o);
+        NN::Matrix::Mul(m1, m2, o);
 
         std::stringstream ss;
         ss << o;
@@ -53,7 +53,7 @@ namespace UnitTest
         mat(1, 2) = 70;
 
         NN::Vector out(mat.col());
-        NN::Mul(vec, mat, out);
+        NN::Matrix::Mul(vec, mat, out);
 
 
         float val = 1.0f;
